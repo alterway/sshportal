@@ -65,7 +65,9 @@ func (l *logTunnel) Write(data []byte) (int, error) {
 }
 
 func (l *logTunnel) Close() error {
-	l.writer.Close()
+	if err := l.writer.Close(); err != nil {
+		log.Printf("failed to close log tunnel channel: %v", err)
+	}
 
 	return l.channel.Close()
 }

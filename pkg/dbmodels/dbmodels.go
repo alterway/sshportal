@@ -168,6 +168,7 @@ const (
 )
 
 // Generic Helper
+
 func GenericNameOrID(db *gorm.DB, identifiers []string) *gorm.DB {
 	var ids []string
 	var names []string

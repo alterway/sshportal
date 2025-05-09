@@ -1,42 +1,40 @@
-run:
-  deadline: 1m
-  tests: false
-  issues.exclude-files:
-    - "testing.go"
-    - ".*\\.pb\\.go"
-    - ".*\\.gen\\.go"
+version: "2"
 
-linters-settings:
-  golint:
-    min-confidence: 0
-  maligned:
-    suggest-new: true
-  goconst:
-    min-len: 5
-    min-occurrences: 4
-  misspell:
-    locale: US
+run:
+  timeout: 2m
+  tests: false
+
+formatters:
+  enable:
+    - gofmt
+    - goimports
 
 linters:
-  disable-all: true
   enable:
     - bodyclose
     - dogsled
     - errcheck
-    - exportloopref
     - gochecknoinits
     - goconst
     - gocritic
-    - gofmt
-    - goimports
-    - gosimple
-    - govet
-    - ineffassign
+    - staticcheck
     - misspell
     - nakedret
     - prealloc
-    #- revive
-    - staticcheck
     - unconvert
     - unparam
     - unused
+
+  settings:
+    goconst:
+      min-len: 5
+      min-occurrences: 4
+    misspell:
+      locale: US
+    staticcheck:
+      checks: ["all", "-QF1008", "-ST1000"]
+    errcheck:
+      exclude-functions:
+        - fmt.Fprintf
+        - fmt.Fprintln
+        - fmt.Fprint

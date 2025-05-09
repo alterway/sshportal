@@ -48,7 +48,10 @@ func multiChannelHandler(conn *gossh.ServerConn, newChan gossh.NewChannel, ctx s
 				client = gossh.NewClient(ncc, chans, reqs)
 			}
 			if err != nil {
-				lch.Close() // fix #56
+				// fix #56
+				if err := lch.Close(); err != nil {
+					log.Printf("failed to close channel: %v", err)
+				}
 				return err
 			}
 			defer func() { _ = client.Close() }()
@@ -89,7 +92,9 @@ func multiChannelHandler(conn *gossh.ServerConn, newChan gossh.NewChannel, ctx s
 				client = gossh.NewClient(ncc, chans, reqs)
 			}
 			if err != nil {
-				lch.Close()
+				if err := lch.Close(); err != nil {
+					log.Printf("failed to close channel: %v", err)
+				}
 				return err
 			}
 			defer func() { _ = client.Close() }()
@@ -237,11 +242,15 @@ func pipe(lreqs, rreqs <-chan *gossh.Request, lch, rch gossh.Channel, sessConfig
 			}
 
 			if lchEOF && lchClosed && !rchClosed {
-				rch.Close()
+				if err := rch.Close(); err != nil {
+					log.Printf("failed to close session channel: %v", err)
+				}
 			}
 
 			if rchEOF && rchClosed && !lchClosed {
-				lch.Close()
+				if err := lch.Close(); err != nil {
+					log.Printf("failed to close session log channel: %v", err)
+				}
 			}
 
 			if lchEOF && rchEOF && lchClosed && rchClosed {

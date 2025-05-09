@@ -2068,7 +2068,7 @@ GLOBAL OPTIONS:
 
 						var user dbmodels.User
 						if err := dbmodels.UsersByIdentifiers(db, c.Args()).First(&user).Error; err != nil {
-							return fmt.Errorf("User %s does not exist ", c.Args().First())
+							return fmt.Errorf("user %s does not exist ", c.Args().First())
 						}
 
 						var reader *bufio.Reader
