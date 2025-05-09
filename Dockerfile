@@ -1,5 +1,5 @@
 # build
-FROM docker.io/golang:1.23 AS builder
+FROM docker.io/golang:1.24 AS builder
 WORKDIR         /go/src/sshportal
 COPY            . ./
 RUN             go build -ldflags="-X main.GitSha=$(git rev-parse --short HEAD) -X main.GitTag=$(git describe --tags --always) -extldflags '-static' -w -s" -tags osusergo,netgo,sqlite_omit_load_extension -v -o /go/bin/sshportal
