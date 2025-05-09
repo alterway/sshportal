@@ -146,7 +146,6 @@ func server(c *serverConfig) (err error) {
 	for _, opt := range []ssh.Option{
 		// custom PublicKeyAuth handler
 		ssh.PublicKeyAuth(bastion.PublicKeyAuthHandler(db, c.logsLocation, c.aclCheckCmd, c.aesKey, c.dbDriver, c.dbURL, c.bindAddr, c.demo)),
-		ssh.PasswordAuth(bastion.PasswordAuthHandler(db, c.logsLocation, c.aclCheckCmd, c.aesKey, c.dbDriver, c.dbURL, c.bindAddr, c.demo)),
 		// retrieve sshportal SSH private key from database
 		bastion.PrivateKeyFromDB(db, c.aesKey),
 	} {
