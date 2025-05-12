@@ -174,10 +174,6 @@ config> key ls
 ssh bart@foo.example.org "$(ssh sshportal@localhost -p 2222 key setup host)"
 ```
 
-```console
-ssh bart@foo.example.org "$(ssh sshportal@localhost -p 2222 key setup host)"
-```
-
 7) Profit
 
 ```console
