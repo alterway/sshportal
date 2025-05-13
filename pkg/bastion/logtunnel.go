@@ -32,7 +32,7 @@ func writeHeader(fd io.Writer, length int) {
 	if err := binary.Write(fd, binary.LittleEndian, int32(tv.Sec)); err != nil {
 		log.Printf("failed to write log header: %v", err)
 	}
-	if err := binary.Write(fd, binary.LittleEndian, tv.Usec); err != nil {
+	if err := binary.Write(fd, binary.LittleEndian, int32(tv.Usec)); err != nil {
 		log.Printf("failed to write log header: %v", err)
 	}
 	if err := binary.Write(fd, binary.LittleEndian, int32(length)); err != nil {
