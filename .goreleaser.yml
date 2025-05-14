@@ -43,6 +43,11 @@ nfpms:
     - systemd
     - libnss-systemd
 
+  overrides:
+    rpm:
+      dependencies:
+        - systemd
+
   recommends:
     - sqlite3
 
