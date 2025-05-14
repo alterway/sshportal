@@ -1,8 +1,16 @@
+version: 2
+
 builds:
   - goos: [linux, windows]
     goarch: [386, amd64, arm64]
     ldflags:
-      - -s -w -X main.GitSha={{.ShortCommit}} -X main.GitBranch=master -X main.GitTag={{.Version}}
+      - "-s -w -extldflags '-static'"
+      - "-X main.GitSha={{.ShortCommit}} -X main.GitBranch=master -X main.GitTag={{.Version}}"
+    tags:
+      - osusergo
+      - netgo
+      - sqlite_omit_load_extension
+
 archives:
   - wrap_in_directory: true
 checksum:
