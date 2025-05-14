@@ -15,7 +15,11 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - run: git fetch --force --tags
+      - run: |
+          git fetch --force --tags
+          new_tag="$(git describe --tags --abbrev=0)-canary"
+          git tag "$new_tag" -f
+          git push -f origin tag "$new_tag"
       - uses: actions/setup-go@v5
         with:
           go-version: stable
