@@ -340,7 +340,7 @@ func PublicKeyAuthHandler(db *gorm.DB, logsLocation, aclCheckCmd, aesKey, dbDriv
 				host, err := dbmodels.HostByName(actx.db, actx.inputUsername)
 				if err != nil {
 					actx.err = err
-					return false
+					return true
 				}
 				_, err = bastionClientConfig(ctx, host)
 				if err != nil {
