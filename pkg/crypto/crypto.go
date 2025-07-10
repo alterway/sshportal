@@ -4,9 +4,7 @@ import (
 	"bytes"
 	"crypto/aes"
 	"crypto/cipher"
-	"crypto/ecdsa"
 	"crypto/ed25519"
-	"crypto/elliptic"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
@@ -34,13 +32,11 @@ func NewSSHKey(keyType string, length uint) (*dbmodels.SSHKey, error) {
 	switch keyType {
 	case "rsa":
 		pemKey, publicKey, err = NewRSAKey(length)
-	case "ecdsa":
-		pemKey, publicKey, err = NewECDSAKey(length)
 	case "ed25519":
 		pemKey, publicKey, err = NewEd25519Key()
 		key.Length = 256 // Ed25519 keys are always 256 bits
 	default:
-		return nil, fmt.Errorf("key type not supported: %q, supported types are: rsa, ecdsa, ed25519", key.Type)
+		return nil, fmt.Errorf("key type not supported: %q, supported types are: rsa, ed25519", key.Type)
 	}
 	if err != nil {
 		return nil, err
@@ -70,38 +66,6 @@ func NewRSAKey(length uint) (*pem.Block, gossh.PublicKey, error) {
 	pemKey := &pem.Block{
 		Type:  "RSA PRIVATE KEY",
 		Bytes: x509.MarshalPKCS1PrivateKey(privateKey),
-	}
-	publicKey, err := gossh.NewPublicKey(&privateKey.PublicKey)
-	if err != nil {
-		return nil, nil, err
-	}
-	return pemKey, publicKey, err
-}
-
-func NewECDSAKey(length uint) (*pem.Block, gossh.PublicKey, error) {
-	var curve elliptic.Curve
-	switch length {
-	case 256:
-		curve = elliptic.P256()
-	case 384:
-		curve = elliptic.P384()
-	case 521:
-		curve = elliptic.P521()
-	default:
-		return nil, nil, fmt.Errorf("key length not supported: %d, supported values are 256, 384, 521", length)
-	}
-	privateKey, err := ecdsa.GenerateKey(curve, rand.Reader)
-	if err != nil {
-		return nil, nil, err
-	}
-	// convert priv key to x509 format
-	marshaledKey, err := x509.MarshalPKCS8PrivateKey(privateKey)
-	pemKey := &pem.Block{
-		Type:  "PRIVATE KEY",
-		Bytes: marshaledKey,
-	}
-	if err != nil {
-		return nil, nil, err
 	}
 	publicKey, err := gossh.NewPublicKey(&privateKey.PublicKey)
 	if err != nil {
