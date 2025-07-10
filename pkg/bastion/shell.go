@@ -1383,7 +1383,7 @@ GLOBAL OPTIONS:
 								break
 							}
 						}
-						key, err := crypto.ImportSSHKey(value)
+						key, err := crypto.ImportRSASSHKey(value)
 						if err != nil {
 							return err
 						}

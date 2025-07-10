@@ -130,7 +130,7 @@ func NewEd25519Key() (*pem.Block, gossh.PublicKey, error) {
 	return pemKey, publicKey, err
 }
 
-func ImportSSHKey(keyValue string) (*dbmodels.SSHKey, error) {
+func ImportRSASSHKey(keyValue string) (*dbmodels.SSHKey, error) {
 	key := dbmodels.SSHKey{
 		Type: "rsa",
 	}
