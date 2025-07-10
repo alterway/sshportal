@@ -1353,9 +1353,10 @@ GLOBAL OPTIONS:
 				}, {
 					Name:        "import",
 					Usage:       "Imports an existing private key",
-					Description: "$> key import\n   $> key import --name=mykey",
+					Description: "$> key import\n   $> key import --name=mykey --type=rsa",
 					Flags: []cli.Flag{
 						cli.StringFlag{Name: "name", Usage: "Assigns a name to the key"},
+						cli.StringFlag{Name: "type", Value: "ed25519", Usage: "Key type (rsa, ecdsa, ed25519)"},
 						cli.StringFlag{Name: "comment", Usage: "Adds a comment"},
 					},
 					Action: func(c *cli.Context) error {
@@ -1383,7 +1384,21 @@ GLOBAL OPTIONS:
 								break
 							}
 						}
-						key, err := crypto.ImportRSASSHKey(value)
+
+						var key *dbmodels.SSHKey
+						var err error
+
+						switch c.String("type") {
+						case "rsa":
+							key, err = crypto.ImportRSASSHKey(value)
+						case "ecdsa":
+							key, err = crypto.ImportECDSASSHKey(value)
+						case "ed25519":
+							key, err = crypto.ImportEd25519SSHKey(value)
+						default:
+							return fmt.Errorf("unsupported key type: %s (supported: rsa, ecdsa, ed25519)", c.String("type"))
+						}
+
 						if err != nil {
 							return err
 						}
