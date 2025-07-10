@@ -38,6 +38,7 @@ func NewSSHKey(keyType string, length uint) (*dbmodels.SSHKey, error) {
 		pemKey, publicKey, err = NewECDSAKey(length)
 	case "ed25519":
 		pemKey, publicKey, err = NewEd25519Key()
+		key.Length = 256 // Ed25519 keys are always 256 bits
 	default:
 		return nil, fmt.Errorf("key type not supported: %q, supported types are: rsa, ecdsa, ed25519", key.Type)
 	}
@@ -158,6 +159,63 @@ func ImportRSASSHKey(keyValue string) (*dbmodels.SSHKey, error) {
 
 	// generte authorized-key formatted pubkey output
 	pub, err := gossh.NewPublicKey(&privateKey.PublicKey)
+	if err != nil {
+		return nil, err
+	}
+	key.PubKey = strings.TrimSpace(string(gossh.MarshalAuthorizedKey(pub)))
+
+	return &key, nil
+}
+
+func ImportEd25519SSHKey(keyValue string) (*dbmodels.SSHKey, error) {
+	key := dbmodels.SSHKey{
+		Type: "ed25519",
+	}
+
+	parsedKey, err := gossh.ParseRawPrivateKey([]byte(keyValue))
+	if err != nil {
+		return nil, err
+	}
+
+	// Handle both ed25519.PrivateKey and *ed25519.PrivateKey
+	var privateKey ed25519.PrivateKey
+	var ok bool
+
+	// Try direct type assertion first
+	if privateKey, ok = parsedKey.(ed25519.PrivateKey); !ok {
+		// Try pointer type assertion
+		if privateKeyPtr, ok := parsedKey.(*ed25519.PrivateKey); ok {
+			privateKey = *privateKeyPtr
+		} else {
+			return nil, errors.New("key type not supported")
+		}
+	}
+
+	key.Length = 256 // Ed25519 keys are always 256 bits
+
+	// Keep the original key format if it's already PEM encoded
+	if strings.Contains(keyValue, "-----BEGIN") {
+		key.PrivKey = keyValue
+	} else {
+		// convert priv key to x509 format
+		marshaledKey, err := x509.MarshalPKCS8PrivateKey(privateKey)
+		if err != nil {
+			return nil, err
+		}
+		var pemKey = &pem.Block{
+			Type:  "PRIVATE KEY",
+			Bytes: marshaledKey,
+		}
+		buf := bytes.NewBufferString("")
+		if err = pem.Encode(buf, pemKey); err != nil {
+			return nil, err
+		}
+		key.PrivKey = buf.String()
+	}
+
+	// generate authorized-key formatted pubkey output
+	publicKey := privateKey.Public().(ed25519.PublicKey)
+	pub, err := gossh.NewPublicKey(publicKey)
 	if err != nil {
 		return nil, err
 	}
