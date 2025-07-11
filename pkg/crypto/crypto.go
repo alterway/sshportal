@@ -183,7 +183,8 @@ func ImportEd25519SSHKey(keyValue string) (*dbmodels.SSHKey, error) {
 
 	// Try direct type assertion first
 	if privateKey, ok = parsedKey.(ed25519.PrivateKey); !ok {
-		// Try pointer type assertion
+		// Try pointer type assertion and dereference
+		// See golang/go#51974 for more details.
 		if privateKeyPtr, ok := parsedKey.(*ed25519.PrivateKey); ok {
 			privateKey = *privateKeyPtr
 		} else {
