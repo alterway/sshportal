@@ -167,65 +167,6 @@ func ImportRSASSHKey(keyValue string) (*dbmodels.SSHKey, error) {
 	return &key, nil
 }
 
-func ImportECDSASSHKey(keyValue string) (*dbmodels.SSHKey, error) {
-	key := dbmodels.SSHKey{
-		Type: "ecdsa",
-	}
-
-	parsedKey, err := gossh.ParseRawPrivateKey([]byte(keyValue))
-	if err != nil {
-		return nil, err
-	}
-	var privateKey *ecdsa.PrivateKey
-	var ok bool
-	if privateKey, ok = parsedKey.(*ecdsa.PrivateKey); !ok {
-		return nil, errors.New("key type not supported")
-	}
-
-	// Determine key length based on curve
-	var length uint
-	switch privateKey.Curve {
-	case elliptic.P256():
-		length = 256
-	case elliptic.P384():
-		length = 384
-	case elliptic.P521():
-		length = 521
-	default:
-		return nil, errors.New("unsupported ECDSA curve")
-	}
-	key.Length = length
-
-	// Keep the original key format if it's already PEM encoded
-	if strings.Contains(keyValue, "-----BEGIN") {
-		key.PrivKey = keyValue
-	} else {
-		// convert priv key to x509 format
-		marshaledKey, err := x509.MarshalPKCS8PrivateKey(privateKey)
-		if err != nil {
-			return nil, err
-		}
-		var pemKey = &pem.Block{
-			Type:  "PRIVATE KEY",
-			Bytes: marshaledKey,
-		}
-		buf := bytes.NewBufferString("")
-		if err = pem.Encode(buf, pemKey); err != nil {
-			return nil, err
-		}
-		key.PrivKey = buf.String()
-	}
-
-	// generate authorized-key formatted pubkey output
-	pub, err := gossh.NewPublicKey(&privateKey.PublicKey)
-	if err != nil {
-		return nil, err
-	}
-	key.PubKey = strings.TrimSpace(string(gossh.MarshalAuthorizedKey(pub)))
-
-	return &key, nil
-}
-
 func ImportEd25519SSHKey(keyValue string) (*dbmodels.SSHKey, error) {
 	key := dbmodels.SSHKey{
 		Type: "ed25519",
