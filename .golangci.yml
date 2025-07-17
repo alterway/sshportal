@@ -38,3 +38,4 @@ linters:
         - fmt.Fprintf
         - fmt.Fprintln
         - fmt.Fprint
+        - fmt.Errorf
