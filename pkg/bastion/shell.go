@@ -20,6 +20,7 @@ import (
 	"github.com/gliderlabs/ssh"
 	"github.com/mgutz/ansi"
 	"github.com/olekukonko/tablewriter"
+	"github.com/olekukonko/tablewriter/tw"
 	"github.com/urfave/cli"
 	gossh "golang.org/x/crypto/ssh"
 	"golang.org/x/crypto/ssh/terminal" // nolint:staticcheck
@@ -201,10 +202,29 @@ GLOBAL OPTIONS:
 							return nil
 						}
 
-						table := tablewriter.NewWriter(s)
-						table.SetHeader([]string{"ID", "Weight", "User groups", "Host groups", "Host pattern", "Action", "Inception", "Expiration", "Updated", "Created", "Comment"})
-						table.SetBorder(false)
-						table.SetCaption(true, fmt.Sprintf("Total: %d ACLs.", len(acls)))
+						table := tablewriter.NewTable(s,
+							tablewriter.WithRendition(tw.Rendition{
+								Symbols: tw.NewSymbols(tw.StyleRounded),
+							}),
+						)
+						table.Header(
+							"ID",
+							"Weight",
+							"User groups",
+							"Host groups",
+							"Host pattern",
+							"Action",
+							"Inception",
+							"Expiration",
+							"Updated",
+							"Created",
+							"Comment",
+						)
+						table.Caption(tw.Caption{
+							Text:  fmt.Sprintf("Total: %d ACLs", len(acls)),
+							Spot:  tw.SpotBottomCenter,
+							Align: tw.AlignCenter,
+						})
 						for _, acl := range acls {
 							userGroups := []string{}
 							hostGroups := []string{}
@@ -224,7 +244,7 @@ GLOBAL OPTIONS:
 								expiration = acl.Expiration.Format("2006-01-02 15:04 MST")
 							}
 
-							table.Append([]string{
+							if err := table.Append(
 								fmt.Sprintf("%d", acl.ID),
 								fmt.Sprintf("%d", acl.Weight),
 								strings.Join(userGroups, ", "),
@@ -236,9 +256,13 @@ GLOBAL OPTIONS:
 								humanize.Time(acl.UpdatedAt),
 								humanize.Time(acl.CreatedAt),
 								acl.Comment,
-							})
+							); err != nil {
+								return fmt.Errorf("can't add data to the row: %v", err)
+							}
 						}
-						table.Render()
+						if err := table.Render(); err != nil {
+							return fmt.Errorf("table rendering failed: %v", err)
+						}
 						return nil
 					},
 				}, {
@@ -688,16 +712,24 @@ GLOBAL OPTIONS:
 							return nil
 						}
 
-						table := tablewriter.NewWriter(s)
-						table.SetHeader([]string{"ID", "Author", "Domain", "Action", "Entity", "Args", "Date"})
-						table.SetBorder(false)
-						table.SetCaption(true, fmt.Sprintf("Total: %d events.", len(events)))
+						table := tablewriter.NewTable(s,
+							tablewriter.WithRendition(tw.Rendition{
+								Symbols: tw.NewSymbols(tw.StyleRounded),
+							}),
+						)
+						table.Header("ID", "Author", "Domain", "Action", "Entity", "Args", "Date")
+						table.Caption(tw.Caption{
+							Text:  fmt.Sprintf("Total: %d events", len(events)),
+							Spot:  tw.SpotBottomCenter,
+							Align: tw.AlignCenter,
+						})
 						for _, event := range events {
 							author := ""
 							if event.Author != nil {
 								author = event.Author.Name
 							}
-							table.Append([]string{
+
+							if err := table.Append(
 								fmt.Sprintf("%d", event.ID),
 								author,
 								event.Domain,
@@ -705,9 +737,13 @@ GLOBAL OPTIONS:
 								event.Entity,
 								wrapText(string(event.Args), 30),
 								humanize.Time(event.CreatedAt),
-							})
+							); err != nil {
+								return fmt.Errorf("can't add data to the row: %v", err)
+							}
 						}
-						table.Render()
+						if err := table.Render(); err != nil {
+							return fmt.Errorf("table rendering failed: %v", err)
+						}
 						return nil
 					},
 				},
@@ -881,10 +917,28 @@ GLOBAL OPTIONS:
 							return nil
 						}
 
-						table := tablewriter.NewWriter(s)
-						table.SetHeader([]string{"ID", "Name", "URL", "Key", "Groups", "Updated", "Created", "Comment", "Hop", "Logging"})
-						table.SetBorder(false)
-						table.SetCaption(true, fmt.Sprintf("Total: %d hosts.", len(hosts)))
+						table := tablewriter.NewTable(s,
+							tablewriter.WithRendition(tw.Rendition{
+								Symbols: tw.NewSymbols(tw.StyleRounded),
+							}),
+						)
+						table.Header(
+							"ID",
+							"Name",
+							"URL",
+							"Key",
+							"Groups",
+							"Updated",
+							"Created",
+							"Comment",
+							"Hop",
+							"Logging",
+						)
+						table.Caption(tw.Caption{
+							Text:  fmt.Sprintf("Total: %d hosts", len(hosts)),
+							Spot:  tw.SpotBottomCenter,
+							Align: tw.AlignCenter,
+						})
 						for _, host := range hosts {
 							authKey := ""
 							if host.SSHKeyID > 0 {
@@ -908,7 +962,7 @@ GLOBAL OPTIONS:
 							} else {
 								hop = ""
 							}
-							table.Append([]string{
+							if err := table.Append(
 								fmt.Sprintf("%d", host.ID),
 								host.Name,
 								host.String(),
@@ -920,9 +974,13 @@ GLOBAL OPTIONS:
 								hop,
 								host.Logging,
 								//FIXME: add some stats about last access time etc
-							})
+							); err != nil {
+								return fmt.Errorf("can't add data to the row: %v", err)
+							}
 						}
-						table.Render()
+						if err := table.Render(); err != nil {
+							return fmt.Errorf("table rendering failed: %v", err)
+						}
 						return nil
 					},
 				}, {
@@ -1172,13 +1230,20 @@ GLOBAL OPTIONS:
 							return nil
 						}
 
-						table := tablewriter.NewWriter(s)
-						table.SetHeader([]string{"ID", "Name", "Hosts", "ACLs", "Updated", "Created", "Comment"})
-						table.SetBorder(false)
-						table.SetCaption(true, fmt.Sprintf("Total: %d host groups.", len(hostGroups)))
+						table := tablewriter.NewTable(s,
+							tablewriter.WithRendition(tw.Rendition{
+								Symbols: tw.NewSymbols(tw.StyleRounded),
+							}),
+						)
+						table.Header("ID", "Name", "Hosts", "ACLs", "Updated", "Created", "Comment")
+						table.Caption(tw.Caption{
+							Text:  fmt.Sprintf("Total: %d host groups", len(hostGroups)),
+							Spot:  tw.SpotBottomCenter,
+							Align: tw.AlignCenter,
+						})
 						for _, hostGroup := range hostGroups {
 							// FIXME: add more stats (amount of hosts, linked usergroups, ...)
-							table.Append([]string{
+							if err := table.Append(
 								fmt.Sprintf("%d", hostGroup.ID),
 								hostGroup.Name,
 								fmt.Sprintf("%d", len(hostGroup.Hosts)),
@@ -1186,9 +1251,13 @@ GLOBAL OPTIONS:
 								humanize.Time(hostGroup.UpdatedAt),
 								humanize.Time(hostGroup.CreatedAt),
 								hostGroup.Comment,
-							})
+							); err != nil {
+								return fmt.Errorf("can't add data to the row: %v", err)
+							}
 						}
-						table.Render()
+						if err := table.Render(); err != nil {
+							return fmt.Errorf("table rendering failed: %v", err)
+						}
 						return nil
 					},
 				}, {
@@ -1465,12 +1534,28 @@ GLOBAL OPTIONS:
 							return nil
 						}
 
-						table := tablewriter.NewWriter(s)
-						table.SetHeader([]string{"ID", "Name", "Type", "Length", "Hosts", "Updated", "Created", "Comment"})
-						table.SetBorder(false)
-						table.SetCaption(true, fmt.Sprintf("Total: %d keys.", len(sshKeys)))
+						table := tablewriter.NewTable(s,
+							tablewriter.WithRendition(tw.Rendition{
+								Symbols: tw.NewSymbols(tw.StyleRounded),
+							}),
+						)
+						table.Header(
+							"ID",
+							"Name",
+							"Type",
+							"Length",
+							"Hosts",
+							"Updated",
+							"Created",
+							"Comment",
+						)
+						table.Caption(tw.Caption{
+							Text:  fmt.Sprintf("Total: %d keys", len(sshKeys)),
+							Spot:  tw.SpotBottomCenter,
+							Align: tw.AlignCenter,
+						})
 						for _, key := range sshKeys {
-							table.Append([]string{
+							if err := table.Append(
 								fmt.Sprintf("%d", key.ID),
 								key.Name,
 								key.Type,
@@ -1480,9 +1565,13 @@ GLOBAL OPTIONS:
 								humanize.Time(key.CreatedAt),
 								key.Comment,
 								//FIXME: add some stats
-							})
+							); err != nil {
+								return fmt.Errorf("can't add data to the row: %v", err)
+							}
 						}
-						table.Render()
+						if err := table.Render(); err != nil {
+							return fmt.Errorf("table rendering failed: %v", err)
+						}
 						return nil
 					},
 				}, {
@@ -1711,10 +1800,28 @@ GLOBAL OPTIONS:
 							return nil
 						}
 
-						table := tablewriter.NewWriter(s)
-						table.SetHeader([]string{"ID", "Name", "Email", "Roles", "Keys", "Groups", "Updated", "Created", "Comment", "Invite Token"})
-						table.SetBorder(false)
-						table.SetCaption(true, fmt.Sprintf("Total: %d users.", len(users)))
+						table := tablewriter.NewTable(s,
+							tablewriter.WithRendition(tw.Rendition{
+								Symbols: tw.NewSymbols(tw.StyleRounded),
+							}),
+						)
+						table.Header(
+							"ID",
+							"Name",
+							"Email",
+							"Roles",
+							"Keys",
+							"Groups",
+							"Updated",
+							"Created",
+							"Comment",
+							"Invite Token",
+						)
+						table.Caption(tw.Caption{
+							Text:  fmt.Sprintf("Total: %d users", len(users)),
+							Spot:  tw.SpotBottomCenter,
+							Align: tw.AlignCenter,
+						})
 						for _, user := range users {
 							groupNames := []string{}
 							for _, userGroup := range user.Groups {
@@ -1724,7 +1831,7 @@ GLOBAL OPTIONS:
 							for _, role := range user.Roles {
 								roleNames = append(roleNames, role.Name)
 							}
-							table.Append([]string{
+							if err := table.Append(
 								fmt.Sprintf("%d", user.ID),
 								user.Name,
 								user.Email,
@@ -1735,9 +1842,13 @@ GLOBAL OPTIONS:
 								humanize.Time(user.CreatedAt),
 								user.Comment,
 								user.InviteToken,
-							})
+							); err != nil {
+								return fmt.Errorf("can't add data to the row: %v", err)
+							}
 						}
-						table.Render()
+						if err := table.Render(); err != nil {
+							return fmt.Errorf("table rendering failed: %v", err)
+						}
 						return nil
 					},
 				}, {
@@ -1968,12 +2079,19 @@ GLOBAL OPTIONS:
 							return nil
 						}
 
-						table := tablewriter.NewWriter(s)
-						table.SetHeader([]string{"ID", "Name", "Users", "ACLs", "Update", "Create", "Comment"})
-						table.SetBorder(false)
-						table.SetCaption(true, fmt.Sprintf("Total: %d user groups.", len(userGroups)))
+						table := tablewriter.NewTable(s,
+							tablewriter.WithRendition(tw.Rendition{
+								Symbols: tw.NewSymbols(tw.StyleRounded),
+							}),
+						)
+						table.Header("ID", "Name", "Users", "ACLs", "Update", "Create", "Comment")
+						table.Caption(tw.Caption{
+							Text:  fmt.Sprintf("Total: %d user groups", len(userGroups)),
+							Spot:  tw.SpotBottomCenter,
+							Align: tw.AlignCenter,
+						})
 						for _, userGroup := range userGroups {
-							table.Append([]string{
+							if err := table.Append(
 								fmt.Sprintf("%d", userGroup.ID),
 								userGroup.Name,
 								fmt.Sprintf("%d", len(userGroup.Users)),
@@ -1981,10 +2099,14 @@ GLOBAL OPTIONS:
 								humanize.Time(userGroup.UpdatedAt),
 								humanize.Time(userGroup.CreatedAt),
 								userGroup.Comment,
-							})
+							); err != nil {
+								return fmt.Errorf("can't add data to the row: %v", err)
+							}
 							// FIXME: add more stats (amount of users, linked usergroups, ...)
 						}
-						table.Render()
+						if err := table.Render(); err != nil {
+							return fmt.Errorf("table rendering failed: %v", err)
+						}
 						return nil
 					},
 				}, {
@@ -2177,10 +2299,17 @@ GLOBAL OPTIONS:
 							return nil
 						}
 
-						table := tablewriter.NewWriter(s)
-						table.SetHeader([]string{"ID", "User", "Updated", "Created", "Comment", "Fingerprint"})
-						table.SetBorder(false)
-						table.SetCaption(true, fmt.Sprintf("Total: %d userkeys.", len(userKeys)))
+						table := tablewriter.NewTable(s,
+							tablewriter.WithRendition(tw.Rendition{
+								Symbols: tw.NewSymbols(tw.StyleRounded),
+							}),
+						)
+						table.Header("ID", "User", "Updated", "Created", "Comment", "Fingerprint")
+						table.Caption(tw.Caption{
+							Text:  fmt.Sprintf("Total: %d userkeys", len(userKeys)),
+							Spot:  tw.SpotBottomCenter,
+							Align: tw.AlignCenter,
+						})
 						for _, userkey := range userKeys {
 							email := naMessage
 							if userkey.User != nil {
@@ -2192,7 +2321,7 @@ GLOBAL OPTIONS:
 								return err
 							}
 
-							table.Append([]string{
+							if err := table.Append(
 								fmt.Sprintf("%d", userkey.ID),
 								email,
 								// FIXME: add fingerprint
@@ -2200,9 +2329,13 @@ GLOBAL OPTIONS:
 								humanize.Time(userkey.CreatedAt),
 								userkey.Comment,
 								gossh.FingerprintSHA256(pubUserkey),
-							})
+							); err != nil {
+								return fmt.Errorf("can't add data to the row: %v", err)
+							}
 						}
-						table.Render()
+						if err := table.Render(); err != nil {
+							return fmt.Errorf("table rendering failed: %v", err)
+						}
 						return nil
 					},
 				}, {
@@ -2310,10 +2443,26 @@ GLOBAL OPTIONS:
 							return nil
 						}
 
-						table := tablewriter.NewWriter(s)
-						table.SetHeader([]string{"ID", "User", "Host", "Status", "Start", "Duration", "Error", "Comment"})
-						table.SetBorder(false)
-						table.SetCaption(true, fmt.Sprintf("Total: %d sessions.", len(sessions)))
+						table := tablewriter.NewTable(s,
+							tablewriter.WithRendition(tw.Rendition{
+								Symbols: tw.NewSymbols(tw.StyleRounded),
+							}),
+						)
+						table.Header(
+							"ID",
+							"User",
+							"Host",
+							"Status",
+							"Start",
+							"Duration",
+							"Error",
+							"Comment",
+						)
+						table.Caption(tw.Caption{
+							Text:  fmt.Sprintf("Total: %d sessions", len(sessions)),
+							Spot:  tw.SpotBottomCenter,
+							Align: tw.AlignCenter,
+						})
 						for _, session := range sessions {
 							var duration string
 							if session.StoppedAt == nil || session.StoppedAt.IsZero() {
@@ -2330,7 +2479,7 @@ GLOBAL OPTIONS:
 							if session.User != nil {
 								username = session.User.Name
 							}
-							table.Append([]string{
+							if err := table.Append(
 								fmt.Sprintf("%d", session.ID),
 								username,
 								hostname,
@@ -2339,9 +2488,13 @@ GLOBAL OPTIONS:
 								duration,
 								wrapText(session.ErrMsg, 30),
 								session.Comment,
-							})
+							); err != nil {
+								return fmt.Errorf("can't add data to the row: %v", err)
+							}
 						}
-						table.Render()
+						if err := table.Render(); err != nil {
+							return fmt.Errorf("table rendering failed: %v", err)
+						}
 						return nil
 					},
 				},
