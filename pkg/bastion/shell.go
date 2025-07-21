@@ -18,7 +18,6 @@ import (
 	"github.com/docker/docker/pkg/namesgenerator"
 	humanize "github.com/dustin/go-humanize"
 	"github.com/gliderlabs/ssh"
-	"github.com/mgutz/ansi"
 	"github.com/olekukonko/tablewriter"
 	"github.com/olekukonko/tablewriter/tw"
 	"github.com/urfave/cli"
@@ -42,6 +41,14 @@ var startTime = time.Now()
 
 const (
 	naMessage = "n/a"
+)
+
+const (
+	Reset   = "\033[0m"
+	Bold    = "\033[1m"
+	FgGreen = "\033[32m"
+	FgRed   = "\033[31m"
+	FgMag   = "\033[35m"
 )
 
 func shell(s ssh.Session, version, gitSha, gitTag string) error {
@@ -1676,16 +1683,13 @@ GLOBAL OPTIONS:
 							},
 						}
 
-						valueColor := ansi.ColorFunc("white")
-						titleColor := ansi.ColorFunc("magenta+bh")
-						keyColor := ansi.ColorFunc("red+bh")
 						for _, section := range sections {
-							fmt.Fprintf(s, "%s\n%s\n", titleColor(section.name), strings.Repeat("=", len(section.name)))
+							fmt.Fprintf(s, "%s\n%s\n", FgMag+section.name+Reset, strings.Repeat("=", len(section.name)))
 							for _, line := range section.lines {
 								if strings.Contains(line.value, "\n") {
-									fmt.Fprintf(s, "%s:\n%s\n", keyColor(line.key), valueColor(line.value))
+									fmt.Fprintf(s, "%s:\n%s\n", FgRed+line.key+Reset, line.value)
 								} else {
-									fmt.Fprintf(s, "%s: %s\n", keyColor(line.key), valueColor(line.value))
+									fmt.Fprintf(s, "%s: %s\n", FgRed+line.key+Reset, line.value)
 								}
 							}
 							fmt.Fprintf(s, "\n")

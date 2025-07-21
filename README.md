@@ -375,7 +375,6 @@ See [examples/mysql](http://github.com/alterway/sshportal/tree/master/examples/m
     * https://github.com/olekukonko/tablewriter: Ascii tables
     * https://github.com/asaskevich/govalidator: Valide user inputs
     * https://github.com/dustin/go-humanize: Human-friendly representation of technical data (time ago, bytes, ...)
-    * https://github.com/mgutz/ansi: Terminal color helpers
     * https://github.com/urfave/cli: CLI flag parsing with subcommands support
 
 ![sshportal data model](https://raw.github.com/alterway/sshportal/master/.assets/sql-schema.png)
