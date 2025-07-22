@@ -3,11 +3,11 @@ module moul.io/sshportal
 require (
 	github.com/anmitsu/go-shlex v0.0.0-20200514113438-38f4b401e2be
 	github.com/asaskevich/govalidator v0.0.0-20230301143203-a9d515a09cc2
+	github.com/creack/pty v1.1.24
 	github.com/docker/docker v28.3.2+incompatible
 	github.com/dustin/go-humanize v1.0.1
 	github.com/gliderlabs/ssh v0.3.8
 	github.com/go-gormigrate/gormigrate/v2 v2.1.4
-	github.com/kr/pty v1.1.8
 	github.com/olekukonko/tablewriter v1.0.8
 	github.com/pkg/errors v0.9.1
 	github.com/reiver/go-oi v1.0.0
@@ -25,7 +25,6 @@ require (
 require (
 	filippo.io/edwards25519 v1.1.0 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.7 // indirect
-	github.com/creack/pty v1.1.24 // indirect
 	github.com/fatih/color v1.18.0 // indirect
 	github.com/go-sql-driver/mysql v1.9.3 // indirect
 	github.com/gopherjs/gopherjs v1.17.2 // indirect
