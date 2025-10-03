@@ -12,7 +12,7 @@ jobs:
   goreleaser:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
       - run: |
@@ -20,7 +20,7 @@ jobs:
           new_tag="$(git describe --tags --abbrev=0)-canary"
           git tag "$new_tag" -f
           git push -f origin tag "$new_tag"
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v6
         with:
           go-version: stable
       - uses: goreleaser/goreleaser-action@v6
