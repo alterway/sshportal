@@ -21,6 +21,8 @@ EOF
 
 set -x
 
+until nc -z sshportal 2222; do echo "Waiting for sshportal to be up..."; sleep 2; done
+
 # login
 ssh sshportal -l invite:integration
 
