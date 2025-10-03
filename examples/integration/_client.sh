@@ -1,7 +1,7 @@
 #!/bin/sh -e
 
 mkdir -p ~/.ssh
-cp /integration/client_test_rsa ~/.ssh/id_rsa
+ssh-keygen -t rsa -b 4096 -C "sshportal@example.com" -f ~/.ssh/id_rsa -N ''
 chmod -R 700 ~/.ssh
 cat >~/.ssh/config <<EOF
 Host sshportal
