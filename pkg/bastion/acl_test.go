@@ -24,7 +24,7 @@ func TestCheckACLs(t *testing.T) {
 		// create sqlite db
 		db, err := gorm.Open(sqlite.Open(filepath.Join(tempDir, "sshportal.db")), &gorm.Config{})
 		c.So(err, ShouldBeNil)
-		c.So(DBInit(db), ShouldBeNil)
+		c.So(DBInit(db, ""), ShouldBeNil)
 
 		// create dummy objects
 		var hostGroup dbmodels.HostGroup

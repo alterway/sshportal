@@ -102,7 +102,7 @@ func server(c *serverConfig) (err error) {
 		return err
 	}
 
-	if err = bastion.DBInit(db); err != nil {
+	if err = bastion.DBInit(db, c.aesKey); err != nil {
 		return err
 	}
 
@@ -151,7 +151,7 @@ func server(c *serverConfig) (err error) {
 		bastion.PrivateKeyFromDB(db, c.aesKey),
 	} {
 		if err := srv.SetOption(opt); err != nil {
-			return err
+			return fmt.Errorf("PrivateKeyFromDB: %v", err)
 		}
 	}
 

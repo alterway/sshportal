@@ -429,12 +429,10 @@ GLOBAL OPTIONS:
 						if err := dbmodels.SSHKeysPreload(db).Find(&config.SSHKeys).Error; err != nil {
 							return err
 						}
-						for _, key := range config.SSHKeys {
-							crypto.SSHKeyDecrypt(actx.aesKey, key)
-						}
+
 						if !c.Bool("decrypt") {
 							for _, key := range config.SSHKeys {
-								if err := crypto.SSHKeyEncrypt(actx.aesKey, key); err != nil {
+								if err := crypto.EncryptField(actx.aesKey, &key.PrivKey); err != nil {
 									return err
 								}
 							}
@@ -443,12 +441,10 @@ GLOBAL OPTIONS:
 						if err := dbmodels.HostsPreload(db).Find(&config.Hosts).Error; err != nil {
 							return err
 						}
-						for _, host := range config.Hosts {
-							crypto.HostDecrypt(actx.aesKey, host)
-						}
+
 						if !c.Bool("decrypt") {
 							for _, host := range config.Hosts {
-								if err := crypto.HostEncrypt(actx.aesKey, host); err != nil {
+								if err := crypto.EncryptField(actx.aesKey, &host.Password); err != nil {
 									return err
 								}
 							}
@@ -564,9 +560,8 @@ GLOBAL OPTIONS:
 						}
 						for _, host := range config.Hosts {
 							host := host
-							crypto.HostDecrypt(actx.aesKey, host)
 							if !c.Bool("decrypt") {
-								if err := crypto.HostEncrypt(actx.aesKey, host); err != nil {
+								if err := crypto.EncryptField(actx.aesKey, &host.Password); err != nil {
 									return err
 								}
 							}
@@ -605,9 +600,8 @@ GLOBAL OPTIONS:
 						}
 						for _, sshKey := range config.SSHKeys {
 							sshKey := sshKey
-							crypto.SSHKeyDecrypt(actx.aesKey, sshKey)
 							if !c.Bool("decrypt") {
-								if err := crypto.SSHKeyEncrypt(actx.aesKey, sshKey); err != nil {
+								if err := crypto.EncryptField(actx.aesKey, &sshKey.PrivKey); err != nil {
 									return err
 								}
 							}
@@ -846,7 +840,7 @@ GLOBAL OPTIONS:
 						}
 
 						// encrypt
-						if err := crypto.HostEncrypt(actx.aesKey, host); err != nil {
+						if err := crypto.EncryptField(actx.aesKey, &host.Password); err != nil {
 							return err
 						}
 
@@ -885,7 +879,9 @@ GLOBAL OPTIONS:
 
 						if c.Bool("decrypt") {
 							for _, host := range hosts {
-								crypto.HostDecrypt(actx.aesKey, host)
+								if err := crypto.DecryptField(actx.aesKey, &host.Password); err != nil {
+									return fmt.Errorf("failed to decrypt Password of '%s' | %v", host.Name, err)
+								}
 							}
 						}
 
@@ -1401,8 +1397,8 @@ GLOBAL OPTIONS:
 
 						key, err := crypto.NewSSHKey(c.String("type"), length)
 						if actx.aesKey != "" {
-							if err2 := crypto.SSHKeyEncrypt(actx.aesKey, key); err2 != nil {
-								return err2
+							if err := crypto.EncryptField(actx.aesKey, &key.PrivKey); err != nil {
+								return err
 							}
 						}
 						if err != nil {
@@ -1513,7 +1509,9 @@ GLOBAL OPTIONS:
 
 						if c.Bool("decrypt") {
 							for _, key := range keys {
-								crypto.SSHKeyDecrypt(actx.aesKey, key)
+								if err := crypto.DecryptField(actx.aesKey, &key.PrivKey); err != nil {
+									return fmt.Errorf("failed to decrypt PrivKey '%s' | %v", key.Name, err)
+								}
 							}
 						}
 
@@ -1641,7 +1639,10 @@ GLOBAL OPTIONS:
 						if err := dbmodels.SSHKeysByIdentifiers(dbmodels.SSHKeysPreload(db), c.Args()).First(&key).Error; err != nil {
 							return err
 						}
-						crypto.SSHKeyDecrypt(actx.aesKey, &key)
+
+						if err := crypto.DecryptField(actx.aesKey, &key.PrivKey); err != nil {
+							return fmt.Errorf("failed to decrypt PrivKey '%s' | %v", key.Name, err)
+						}
 
 						type line struct {
 							key   string
