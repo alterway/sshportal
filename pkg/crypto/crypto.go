@@ -14,7 +14,6 @@ import (
 	"encoding/pem"
 	"errors"
 	"fmt"
-	"io"
 	"strings"
 
 	gossh "golang.org/x/crypto/ssh"
@@ -225,77 +224,113 @@ func ImportEd25519SSHKey(keyValue string) (*dbmodels.SSHKey, error) {
 	return &key, nil
 }
 
-func encrypt(key []byte, text string) (string, error) {
-	plaintext := []byte(text)
+func encrypt(key []byte, byteText []byte) ([]byte, error) {
 	block, err := aes.NewCipher(key)
 	if err != nil {
-		return "", err
+		return []byte{}, err
 	}
-	ciphertext := make([]byte, aes.BlockSize+len(plaintext))
-	iv := ciphertext[:aes.BlockSize]
-	if _, err := io.ReadFull(rand.Reader, iv); err != nil {
-		return "", err
+
+	aesgcm, err := cipher.NewGCMWithRandomNonce(block)
+	if err != nil {
+		return []byte{}, err
 	}
-	stream := cipher.NewCFBEncrypter(block, iv)
-	stream.XORKeyStream(ciphertext[aes.BlockSize:], plaintext)
-	return base64.URLEncoding.EncodeToString(ciphertext), nil
+
+	return aesgcm.Seal(nil, nil, byteText, nil), err
 }
 
-func decrypt(key []byte, cryptoText string) (string, error) {
-	ciphertext, _ := base64.URLEncoding.DecodeString(cryptoText)
+func decrypt(key []byte, ciphertext []byte) ([]byte, error) {
 	block, err := aes.NewCipher(key)
+	if err != nil {
+		return []byte{}, err
+	}
+
+	aesgcm, err := cipher.NewGCMWithRandomNonce(block)
+	if err != nil {
+		return []byte{}, err
+	}
+
+	plaintext, err := aesgcm.Open(nil, nil, ciphertext, nil)
+	if err != nil {
+		return []byte{}, err
+	}
+	return plaintext, nil
+}
+
+// DecryptCFBField DEPRECATED
+// Only used to migrate old encrypted DB fields to the new cipher
+func DecryptCFBField(aesKey string, field string) (string, error) {
+	ciphertext, err := base64.URLEncoding.DecodeString(field)
+
+	// The field is not base64 encoded so it wasn't encrypted
+	// we return the unencrypted field
+	if err != nil {
+		return field, nil
+	}
+
+	block, err := aes.NewCipher([]byte(aesKey))
 	if err != nil {
 		return "", err
 	}
+
 	if len(ciphertext) < aes.BlockSize {
 		return "", fmt.Errorf("ciphertext too short")
 	}
 	iv := ciphertext[:aes.BlockSize]
 	ciphertext = ciphertext[aes.BlockSize:]
-	stream := cipher.NewCFBDecrypter(block, iv)
+	stream := cipher.NewCFBDecrypter(block, iv) // nolint:staticcheck
+
+	// work in-place if the two arguments are the same
 	stream.XORKeyStream(ciphertext, ciphertext)
+
+	// Store unencrypted version of the field
 	return string(ciphertext), nil
 }
 
-func safeDecrypt(key []byte, cryptoText string) string {
-	if len(key) == 0 {
-		return cryptoText
+func EncryptField(aesKey string, field *string) error {
+	if aesKey == "" {
+		return nil
 	}
-	out, err := decrypt(key, cryptoText)
+
+	cryptoText, err := encrypt([]byte(aesKey), []byte(*field))
 	if err != nil {
-		return cryptoText
+		return err
 	}
-	return out
+
+	*field = base64.URLEncoding.EncodeToString(cryptoText)
+
+	return nil
 }
 
-func HostEncrypt(aesKey string, host *dbmodels.Host) (err error) {
+func DecryptField(aesKey string, field *string) error {
 	if aesKey == "" {
 		return nil
 	}
-	if host.Password != "" {
-		host.Password, err = encrypt([]byte(aesKey), host.Password)
-	}
-	return
-}
-func HostDecrypt(aesKey string, host *dbmodels.Host) {
-	if aesKey == "" {
-		return
-	}
-	if host.Password != "" {
-		host.Password = safeDecrypt([]byte(aesKey), host.Password)
-	}
-}
-
-func SSHKeyEncrypt(aesKey string, key *dbmodels.SSHKey) (err error) {
-	if aesKey == "" {
+	// Not base64 encoded means field is already unencrypted
+	cryptoText, err := base64.URLEncoding.DecodeString(*field)
+	if err != nil {
 		return nil
 	}
-	key.PrivKey, err = encrypt([]byte(aesKey), key.PrivKey)
-	return
-}
-func SSHKeyDecrypt(aesKey string, key *dbmodels.SSHKey) {
-	if aesKey == "" {
-		return
+
+	plaintext, err := decrypt([]byte(aesKey), cryptoText)
+	if err != nil {
+		return err
 	}
-	key.PrivKey = safeDecrypt([]byte(aesKey), key.PrivKey)
+
+	*field = string(plaintext)
+
+	return nil
+}
+
+func EncryptBackup(aesKey string, data []byte) ([]byte, error) {
+	if aesKey == "" {
+		return []byte{}, fmt.Errorf("encryption backup with no aes key")
+	}
+	return encrypt([]byte(aesKey), data)
+}
+
+func DecryptBackup(aesKey string, data []byte) ([]byte, error) {
+	if aesKey == "" {
+		return []byte{}, nil
+	}
+	return decrypt([]byte(aesKey), data)
 }

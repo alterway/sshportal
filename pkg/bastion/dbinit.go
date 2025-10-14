@@ -18,7 +18,7 @@ import (
 	"moul.io/sshportal/pkg/dbmodels"
 )
 
-func DBInit(db *gorm.DB) error {
+func DBInit(db *gorm.DB, aesKey string) error {
 	log.SetOutput(io.Discard)
 	log.SetOutput(os.Stderr)
 
@@ -555,6 +555,7 @@ func DBInit(db *gorm.DB) error {
 		}
 		key.Name = "default"
 		key.Comment = "created by sshportal"
+
 		if err := db.Create(&key).Error; err != nil {
 			return err
 		}
@@ -654,6 +655,14 @@ func DBInit(db *gorm.DB) error {
 		log.Printf("info: '%s' user created. Run 'ssh localhost -p 2222 -l invite:%s' to associate your public key with this account", user.Name, user.InviteToken)
 	}
 
+	// Starting with v1.29, When --aes-key is provided, SSHportal will re-encrypt all secret fields in DB
+	// that have been encrypted with deprecated cipher (CBF)
+	if aesKey != "" && count != 0 {
+		if err := EncryptionFix(db, aesKey); err != nil {
+			return err
+		}
+	}
+
 	// create host ssh key
 	if err := db.Table("ssh_keys").Where("name = ?", "host").Count(&count).Error; err != nil {
 		return err
@@ -665,6 +674,7 @@ func DBInit(db *gorm.DB) error {
 		}
 		key.Name = "host"
 		key.Comment = "created by sshportal"
+
 		if err := db.Create(&key).Error; err != nil {
 			return err
 		}
@@ -689,4 +699,91 @@ func randStringBytes(n int) (string, error) {
 		b[i] = letterBytes[r.Int64()]
 	}
 	return string(b), nil
+}
+
+func EncryptionFix(db *gorm.DB, aesKey string) error {
+	var sshKeys []*dbmodels.SSHKey
+	var hosts []*dbmodels.Host
+
+	if aesKey == "" {
+		return nil
+	}
+
+	if err := db.Where("password <> ''").Find(&hosts).Error; err != nil {
+		return err
+	}
+
+	if err := db.Find(&sshKeys).Error; err != nil {
+		return err
+	}
+	for _, k := range sshKeys {
+		keyDecryptedWithGcm := k.PrivKey
+		keyDecryptedWithCfb := ""
+
+		if err := crypto.DecryptField(aesKey, &keyDecryptedWithGcm); err != nil {
+			keyDecryptedWithCfb, err = crypto.DecryptCFBField(aesKey, k.PrivKey)
+			// Impossible to decrypt with GCM or CFB but we ignore the error
+			// because we don't want SSHportal to crash now
+			// It will be catched by PrivateKeyFromDB() later
+			if err != nil {
+				log.Printf("warn: %s key found encrypted", k.Name)
+				return nil
+			}
+			// Wrong AES key has been provided but we ignore the error here
+			// because we don't want SSHportal to crash now.
+			// It will be catched by PrivateKeyFromDB() later
+			if _, err := gossh.ParsePrivateKey([]byte(keyDecryptedWithCfb)); err != nil {
+				log.Printf("warn(EncryptionFix): %s key can't be decrypted with provided --aes-key ", k.Name)
+				return nil
+			}
+		}
+		// No error when decrypting with GCM and content field changed means the field
+		// was already encrypted with GCM
+		if keyDecryptedWithGcm != k.PrivKey {
+			return nil
+		}
+
+		// Field was encrypted with CFB
+		if keyDecryptedWithCfb != "" {
+			k.PrivKey = keyDecryptedWithCfb
+		}
+
+		// The field was not encrypted
+		if k.PrivKey == keyDecryptedWithGcm {
+			continue
+		}
+
+		if err := crypto.EncryptField(aesKey, &k.PrivKey); err != nil {
+			return fmt.Errorf("failed to encrypt PrivKey %s: %v", k.Name, err)
+		}
+
+		if err := db.Model(sshKeys).Where("id = ?", k.ID).Update("priv_key", k.PrivKey).Error; err != nil {
+			return fmt.Errorf("failed to update SSHKey '%s' in DB: %v", k.Name, err)
+		}
+	}
+
+	// If we are here this means there is no GCM encrypted fields
+	for _, h := range hosts {
+
+		pwdDecryptedWithCfb, err := crypto.DecryptCFBField(aesKey, h.Password)
+		if err != nil {
+			return nil
+		}
+
+		if pwdDecryptedWithCfb != h.Password {
+			h.Password = pwdDecryptedWithCfb
+		} else {
+			continue
+		}
+		if err := crypto.EncryptField(aesKey, &h.Password); err != nil {
+			return fmt.Errorf("failed to reencrypt Password %s: %v", h.Name, err)
+		}
+		if err := db.Model(hosts).Where("id = ?", h.ID).Update("password", h.Password).Error; err != nil {
+			return fmt.Errorf("failed update password of Host %s in DB: %v", h.Name, err)
+		}
+	}
+
+	log.Printf("info: CFB encrypted fields have been re-encrypted with AES-GCM")
+
+	return nil
 }
