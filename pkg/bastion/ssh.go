@@ -209,9 +209,13 @@ func ChannelHandler(srv *ssh.Server, conn *gossh.ServerConn, newChan gossh.NewCh
 func bastionClientConfig(ctx ssh.Context, host *dbmodels.Host) (*gossh.ClientConfig, error) {
 	actx := ctx.Value(authContextKey).(*authContext)
 
-	crypto.HostDecrypt(actx.aesKey, host)
+	if err := crypto.DecryptField(actx.aesKey, &host.Password); err != nil {
+		return nil, err
+	}
 	if host.SSHKey != nil {
-		crypto.SSHKeyDecrypt(actx.aesKey, host.SSHKey)
+		if err := crypto.DecryptField(actx.aesKey, &host.SSHKey.PrivKey); err != nil {
+			return nil, err
+		}
 	}
 
 	clientConfig, err := host.ClientConfig(dynamicHostKey(actx.db, host))
@@ -300,11 +304,15 @@ func PrivateKeyFromDB(db *gorm.DB, aesKey string) func(*ssh.Server) error {
 		if err := dbmodels.SSHKeysByIdentifiers(db, []string{"host"}).First(&key).Error; err != nil {
 			return err
 		}
-		crypto.SSHKeyDecrypt(aesKey, &key)
+		if err := crypto.DecryptField(aesKey, &key.PrivKey); err != nil {
+			log.Printf("error: key seems encrypted but incorrect --aes-key has been provided")
+			return fmt.Errorf("can't decrypt '%s' private Key: %v", key.Name, err)
+		}
 
 		signer, err := gossh.ParsePrivateKey([]byte(key.PrivKey))
 		if err != nil {
-			return err
+			log.Printf("error: key seems encrypted but incorrect --aes-key has been provided")
+			return fmt.Errorf("can't parse '%s' private Key: %v", key.Name, err)
 		}
 		srv.AddHostKey(signer)
 		return nil
