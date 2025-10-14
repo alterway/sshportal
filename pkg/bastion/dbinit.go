@@ -556,6 +556,12 @@ func DBInit(db *gorm.DB, aesKey string) error {
 		key.Name = "default"
 		key.Comment = "created by sshportal"
 
+		if aesKey != "" {
+			if err := crypto.EncryptField(aesKey, &key.PrivKey); err != nil {
+				return fmt.Errorf("failed to encrypt PrivKey %d: %v", key.ID, err)
+			}
+		}
+
 		if err := db.Create(&key).Error; err != nil {
 			return err
 		}
@@ -656,7 +662,7 @@ func DBInit(db *gorm.DB, aesKey string) error {
 	}
 
 	// Starting with v1.29, When --aes-key is provided, SSHportal will re-encrypt all secret fields in DB
-	// that have been encrypted with deprecated cipher (CBF)
+	// that have either been encrypted with deprecated cipher (CFB) or was left in plaintext
 	if aesKey != "" && count != 0 {
 		if err := EncryptionFix(db, aesKey); err != nil {
 			return err
@@ -674,6 +680,12 @@ func DBInit(db *gorm.DB, aesKey string) error {
 		}
 		key.Name = "host"
 		key.Comment = "created by sshportal"
+
+		if aesKey != "" {
+			if err := crypto.EncryptField(aesKey, &key.PrivKey); err != nil {
+				return fmt.Errorf("failed to encrypt PrivKey %d: %v", key.ID, err)
+			}
+		}
 
 		if err := db.Create(&key).Error; err != nil {
 			return err
@@ -716,6 +728,7 @@ func EncryptionFix(db *gorm.DB, aesKey string) error {
 	if err := db.Find(&sshKeys).Error; err != nil {
 		return err
 	}
+
 	for _, k := range sshKeys {
 		keyDecryptedWithGcm := k.PrivKey
 		keyDecryptedWithCfb := ""
@@ -726,7 +739,7 @@ func EncryptionFix(db *gorm.DB, aesKey string) error {
 			// because we don't want SSHportal to crash now
 			// It will be catched by PrivateKeyFromDB() later
 			if err != nil {
-				log.Printf("warn: %s key found encrypted", k.Name)
+				log.Printf("warn(EncryptionFix): %s key can't be decrypted", k.Name)
 				return nil
 			}
 			// Wrong AES key has been provided but we ignore the error here
@@ -734,6 +747,7 @@ func EncryptionFix(db *gorm.DB, aesKey string) error {
 			// It will be catched by PrivateKeyFromDB() later
 			if _, err := gossh.ParsePrivateKey([]byte(keyDecryptedWithCfb)); err != nil {
 				log.Printf("warn(EncryptionFix): %s key can't be decrypted with provided --aes-key ", k.Name)
+				log.Printf("warn(EncryptionFix): re-encryption aborted")
 				return nil
 			}
 		}
@@ -748,38 +762,45 @@ func EncryptionFix(db *gorm.DB, aesKey string) error {
 			k.PrivKey = keyDecryptedWithCfb
 		}
 
-		// The field was not encrypted
-		if k.PrivKey == keyDecryptedWithGcm {
-			continue
-		}
+		// if k.PrivKey == (keyDecryptedWithCfb || keyDecryptedWithGcm)
+		// this means the field was not encrypted
 
 		if err := crypto.EncryptField(aesKey, &k.PrivKey); err != nil {
 			return fmt.Errorf("failed to encrypt PrivKey %s: %v", k.Name, err)
 		}
+	}
 
+	// We only update the DB now to prevent encryption of plaintext key with a bad
+	// key (which could be detected too late if done in the above loop)
+	for _, k := range sshKeys {
 		if err := db.Model(sshKeys).Where("id = ?", k.ID).Update("priv_key", k.PrivKey).Error; err != nil {
 			return fmt.Errorf("failed to update SSHKey '%s' in DB: %v", k.Name, err)
 		}
 	}
 
 	// If we are here this means there is no GCM encrypted fields
+	//
+	// We can't really test if we are decrypting the CFB-encrypted Password field with
+	// the right AES key so if you only have CFB-encrypted Passwords in your SSHportal
+	// DB and you run v1.29.0 AND provide a bad --aes-key then your passwords will be lost!
 	for _, h := range hosts {
 
 		pwdDecryptedWithCfb, err := crypto.DecryptCFBField(aesKey, h.Password)
 		if err != nil {
+			log.Printf("warn(EncryptionFix): failed to decrypt Password of Host %s | %v", h.Name, err)
 			return nil
 		}
 
 		if pwdDecryptedWithCfb != h.Password {
 			h.Password = pwdDecryptedWithCfb
-		} else {
-			continue
 		}
+
 		if err := crypto.EncryptField(aesKey, &h.Password); err != nil {
-			return fmt.Errorf("failed to reencrypt Password %s: %v", h.Name, err)
+			return fmt.Errorf("failed to reencrypt Password of Host %s: %v", h.Name, err)
 		}
+
 		if err := db.Model(hosts).Where("id = ?", h.ID).Update("password", h.Password).Error; err != nil {
-			return fmt.Errorf("failed update password of Host %s in DB: %v", h.Name, err)
+			return fmt.Errorf("failed to update password of Host %s in DB: %v", h.Name, err)
 		}
 	}
 
