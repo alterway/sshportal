@@ -770,19 +770,13 @@ func EncryptionFix(db *gorm.DB, aesKey string) error {
 		}
 	}
 
-	// We only update the DB now to prevent encryption of plaintext key with a bad
-	// key (which could be detected too late if done in the above loop)
-	for _, k := range sshKeys {
-		if err := db.Model(sshKeys).Where("id = ?", k.ID).Update("priv_key", k.PrivKey).Error; err != nil {
-			return fmt.Errorf("failed to update SSHKey '%s' in DB: %v", k.Name, err)
-		}
-	}
-
-	// If we are here this means there is no GCM encrypted fields
+	// If we are here this means there is no GCM encrypted fields (we abort above if we
+	// find a AES-GCM encrypted field)
 	//
 	// We can't really test if we are decrypting the CFB-encrypted Password field with
 	// the right AES key so if you only have CFB-encrypted Passwords in your SSHportal
 	// DB and you run v1.29.0 AND provide a bad --aes-key then your passwords will be lost!
+	// If you have at least one encrypted SSH key the problem will be detected above
 	for _, h := range hosts {
 
 		pwdDecryptedWithCfb, err := crypto.DecryptCFBField(aesKey, h.Password)
@@ -798,13 +792,31 @@ func EncryptionFix(db *gorm.DB, aesKey string) error {
 		if err := crypto.EncryptField(aesKey, &h.Password); err != nil {
 			return fmt.Errorf("failed to reencrypt Password of Host %s: %v", h.Name, err)
 		}
-
-		if err := db.Model(hosts).Where("id = ?", h.ID).Update("password", h.Password).Error; err != nil {
-			return fmt.Errorf("failed to update password of Host %s in DB: %v", h.Name, err)
-		}
 	}
 
-	log.Printf("info: CFB encrypted fields have been re-encrypted with AES-GCM")
+	// We only update the DB now to prevent encryption of plaintext field with a bad
+	// AES key (which could be detected too late if done in the first loop)
+	err := db.Transaction(func(tx *gorm.DB) error {
+		for _, h := range hosts {
+			err := tx.Model(hosts).Where("id = ?", h.ID).Update("password", h.Password).Error
+			if err != nil || tx.RowsAffected == 0 {
+				return fmt.Errorf("failed to update password of Host '%s' in DB | %v", h.Name, err)
+			}
+		}
+		for _, k := range sshKeys {
+			err := tx.Model(sshKeys).Where("id = ?", k.ID).Update("priv_key", k.PrivKey).Error
+			if err != nil || tx.RowsAffected == 0 {
+				return fmt.Errorf("failed to update SSHKey '%s' in DB | %v", k.Name, err)
+			}
+		}
+		return nil
+	})
+
+	if err != nil {
+		log.Printf("error(EncryptionFix): %v", err)
+	} else {
+		log.Printf("info: CFB encrypted fields have been re-encrypted with AES-GCM")
+	}
 
 	return nil
 }
