@@ -15,6 +15,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"unicode/utf8"
 
 	gossh "golang.org/x/crypto/ssh"
 	"moul.io/sshportal/pkg/dbmodels"
@@ -261,9 +262,20 @@ func decrypt(key []byte, ciphertext []byte) ([]byte, error) {
 func DecryptCFBField(aesKey string, field string) (string, error) {
 	ciphertext, err := base64.URLEncoding.DecodeString(field)
 
-	// The field is not base64 encoded so it wasn't encrypted
-	// we return the unencrypted field
+	// The field is not base64 encoded so it wasn't encrypted.
+	// We return the unencrypted field
 	if err != nil {
+		return field, nil
+	}
+
+	// If the ciphertext length  is less than 128 bits, we can't decrypt and
+	// that means it wasn't previously encrypted. So we return the plaintext field
+	//
+	// For example, the field "qwertyi" is considered as a valid base64 string
+	// and would pass the previous check
+	// Any password > 16 chars which could be considered as a base64 string
+	// will not be catched here
+	if len(ciphertext) < aes.BlockSize {
 		return field, nil
 	}
 
@@ -272,9 +284,6 @@ func DecryptCFBField(aesKey string, field string) (string, error) {
 		return "", err
 	}
 
-	if len(ciphertext) < aes.BlockSize {
-		return "", fmt.Errorf("ciphertext too short")
-	}
 	iv := ciphertext[:aes.BlockSize]
 	ciphertext = ciphertext[aes.BlockSize:]
 	stream := cipher.NewCFBDecrypter(block, iv) // nolint:staticcheck
@@ -282,7 +291,14 @@ func DecryptCFBField(aesKey string, field string) (string, error) {
 	// work in-place if the two arguments are the same
 	stream.XORKeyStream(ciphertext, ciphertext)
 
-	// Store unencrypted version of the field
+	// The supposed decrypted field should be a UTF8 string.
+	// If not, it means the field was not encrypted.
+	// This final check will catch all the others passwords
+	// which were not encrypted but mis-identified as base64 strings
+	if !utf8.Valid(ciphertext) {
+		return field, nil
+	}
+
 	return string(ciphertext), nil
 }
 
