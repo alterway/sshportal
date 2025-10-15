@@ -664,7 +664,7 @@ func DBInit(db *gorm.DB, aesKey string) error {
 	// Starting with v1.29, When --aes-key is provided, SSHportal will re-encrypt all secret fields in DB
 	// that have either been encrypted with deprecated cipher (CFB) or was left in plaintext
 	if aesKey != "" && count != 0 {
-		if err := EncryptionFix(db, aesKey); err != nil {
+		if err := MigrateToGCMCipher(db, aesKey); err != nil {
 			return err
 		}
 	}
@@ -713,7 +713,7 @@ func randStringBytes(n int) (string, error) {
 	return string(b), nil
 }
 
-func EncryptionFix(db *gorm.DB, aesKey string) error {
+func MigrateToGCMCipher(db *gorm.DB, aesKey string) error {
 	var sshKeys []*dbmodels.SSHKey
 	var hosts []*dbmodels.Host
 
@@ -739,15 +739,15 @@ func EncryptionFix(db *gorm.DB, aesKey string) error {
 			// because we don't want SSHportal to crash now
 			// It will be catched by PrivateKeyFromDB() later
 			if err != nil {
-				log.Printf("warn(EncryptionFix): %s key can't be decrypted", k.Name)
+				log.Printf("warn(MigrateToGCMCipher): %s key can't be decrypted", k.Name)
 				return nil
 			}
 			// Wrong AES key has been provided but we ignore the error here
 			// because we don't want SSHportal to crash now.
 			// It will be catched by PrivateKeyFromDB() later
 			if _, err := gossh.ParsePrivateKey([]byte(keyDecryptedWithCfb)); err != nil {
-				log.Printf("warn(EncryptionFix): %s key can't be decrypted with provided --aes-key ", k.Name)
-				log.Printf("warn(EncryptionFix): re-encryption aborted")
+				log.Printf("warn(MigrateToGCMCipher): %s key can't be decrypted with provided --aes-key ", k.Name)
+				log.Printf("warn(MigrateToGCMCipher): re-encryption aborted")
 				return nil
 			}
 		}
@@ -781,7 +781,7 @@ func EncryptionFix(db *gorm.DB, aesKey string) error {
 
 		pwdDecryptedWithCfb, err := crypto.DecryptCFBField(aesKey, h.Password)
 		if err != nil {
-			log.Printf("warn(EncryptionFix): failed to decrypt Password of Host %s | %v", h.Name, err)
+			log.Printf("warn(MigrateToGCMCipher): failed to decrypt Password of Host %s | %v", h.Name, err)
 			return nil
 		}
 
@@ -813,7 +813,7 @@ func EncryptionFix(db *gorm.DB, aesKey string) error {
 	})
 
 	if err != nil {
-		log.Printf("error(EncryptionFix): %v", err)
+		log.Printf("error(MigrateToGCMCipher): %v", err)
 	} else {
 		log.Printf("info: CFB encrypted fields have been re-encrypted with AES-GCM")
 	}
