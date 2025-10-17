@@ -51,11 +51,11 @@ jobs:
             ${{ runner.os }}-go-${{ matrix.golang }}-
       - name: Run tests on Windows
         if: matrix.os == 'windows-latest'
-        run: go test -timeout 30s
+        run: go test ./... -timeout 30s
         continue-on-error: true
       - name: Run tests on Unix-like
         if: matrix.os != 'windows-latest'
-        run: go test -timeout 30s
+        run: go test ./... -timeout 30s
   integration-tests:
     needs: unit-tests
     runs-on: ubuntu-latest
