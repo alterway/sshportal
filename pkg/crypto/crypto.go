@@ -259,6 +259,8 @@ func decrypt(key []byte, ciphertext []byte) ([]byte, error) {
 
 // DecryptCFBField DEPRECATED
 // Only used to migrate old encrypted DB fields to the new cipher
+// This function also return the field without error if found unencrypted
+// This behavior is not present in the new DecryptField() function
 func DecryptCFBField(aesKey string, field string) (string, error) {
 	ciphertext, err := base64.URLEncoding.DecodeString(field)
 
@@ -321,10 +323,10 @@ func DecryptField(aesKey string, field *string) error {
 	if aesKey == "" {
 		return nil
 	}
-	// Not base64 encoded means field is already unencrypted
+
 	cryptoText, err := base64.URLEncoding.DecodeString(*field)
 	if err != nil {
-		return nil
+		return err
 	}
 
 	plaintext, err := decrypt([]byte(aesKey), cryptoText)
