@@ -297,7 +297,7 @@ func DecryptCFBField(aesKey string, field string) (string, error) {
 	// If not, it means the field was not encrypted.
 	// This final check will catch all the others passwords
 	// which were not encrypted but mis-identified as base64 strings
-	if !utf8.Valid(ciphertext) {
+	if !utf8.Valid(ciphertext) || len(ciphertext) == 0 {
 		return field, nil
 	}
 
