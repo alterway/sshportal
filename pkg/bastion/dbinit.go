@@ -800,13 +800,13 @@ func MigrateToGCMCipher(db *gorm.DB, aesKey string) error {
 	err := db.Transaction(func(tx *gorm.DB) error {
 		for _, h := range hosts {
 			err := tx.Model(hosts).Where("id = ?", h.ID).Update("password", h.Password).Error
-			if err != nil || tx.RowsAffected == 0 {
+			if err != nil {
 				return fmt.Errorf("failed to update password of Host '%s' in DB | %v", h.Name, err)
 			}
 		}
 		for _, k := range sshKeys {
 			err := tx.Model(sshKeys).Where("id = ?", k.ID).Update("priv_key", k.PrivKey).Error
-			if err != nil || tx.RowsAffected == 0 {
+			if err != nil {
 				return fmt.Errorf("failed to update SSHKey '%s' in DB | %v", k.Name, err)
 			}
 		}
