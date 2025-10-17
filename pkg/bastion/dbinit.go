@@ -735,6 +735,7 @@ func MigrateToGCMCipher(db *gorm.DB, aesKey string) error {
 
 		if err := crypto.DecryptField(aesKey, &keyDecryptedWithGcm); err != nil {
 			keyDecryptedWithCfb, err = crypto.DecryptCFBField(aesKey, k.PrivKey)
+
 			// Impossible to decrypt with GCM or CFB but we ignore the error
 			// because we don't want SSHportal to crash now
 			// It will be catched by PrivateKeyFromDB() later
@@ -742,8 +743,9 @@ func MigrateToGCMCipher(db *gorm.DB, aesKey string) error {
 				log.Printf("warn(MigrateToGCMCipher): %s key can't be decrypted", k.Name)
 				return nil
 			}
-			// Wrong AES key has been provided but we ignore the error here
-			// because we don't want SSHportal to crash now.
+
+			// Wrong AES key has been provided but we ignore the error here because
+			// we don't want SSHportal to crash now.
 			// It will be catched by PrivateKeyFromDB() later
 			if _, err := gossh.ParsePrivateKey([]byte(keyDecryptedWithCfb)); err != nil {
 				log.Printf("warn(MigrateToGCMCipher): %s key can't be decrypted with provided --aes-key ", k.Name)
@@ -751,19 +753,18 @@ func MigrateToGCMCipher(db *gorm.DB, aesKey string) error {
 				return nil
 			}
 		}
+
 		// No error when decrypting with GCM and content field changed means the field
 		// was already encrypted with GCM
 		if keyDecryptedWithGcm != k.PrivKey {
 			return nil
 		}
 
-		// Field was encrypted with CFB
+		// Field was encrypted with CFB or is unencrypted
+		// DecryptCFBField() return the field unchanged if found unencrypted
 		if keyDecryptedWithCfb != "" {
 			k.PrivKey = keyDecryptedWithCfb
 		}
-
-		// if k.PrivKey == (keyDecryptedWithCfb || keyDecryptedWithGcm)
-		// this means the field was not encrypted
 
 		if err := crypto.EncryptField(aesKey, &k.PrivKey); err != nil {
 			return fmt.Errorf("failed to encrypt PrivKey %s: %v", k.Name, err)
