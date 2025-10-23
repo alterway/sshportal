@@ -2,7 +2,7 @@ package bastion // import "moul.io/sshportal/pkg/bastion"
 
 import (
 	"encoding/binary"
-	"errors"
+	"fmt"
 	"io"
 	"log"
 	"syscall"
@@ -41,7 +41,7 @@ func NewLogChannel(channel ssh.Channel, writer io.WriteCloser) *logChannel {
 }
 
 func (l *logChannel) Read(_ []byte) (int, error) {
-	return 0, errors.New("logChannel.Read is not implemented")
+	return 0, fmt.Errorf("logChannel.Read is not implemented")
 }
 
 func (l *logChannel) Write(data []byte) (int, error) {

@@ -2,7 +2,6 @@ package bastion // import "moul.io/sshportal/pkg/bastion"
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"log"
 	"net"
@@ -93,7 +92,7 @@ func ChannelHandler(srv *ssh.Server, conn *gossh.ServerConn, newChan gossh.NewCh
 		ip, err := net.ResolveTCPAddr(conn.RemoteAddr().Network(), conn.RemoteAddr().String())
 		if err == nil {
 			log.Printf("Auth failed: sshUser=%q remote=%q", conn.User(), ip.IP.String())
-			actx.err = errors.New("access denied")
+			actx.err = fmt.Errorf("access denied")
 
 			ch, _, err2 := newChan.Accept()
 			if err2 != nil {
@@ -380,13 +379,13 @@ func PublicKeyAuthHandler(db *gorm.DB, logsLocation, aclCheckCmd, aesKey, dbDriv
 				actx.message = fmt.Sprintf("Welcome %s!\n\nYour key is now associated with the user %q.\n", actx.user.Name, actx.user.Email)
 			} else {
 				actx.user = dbmodels.User{Name: "Anonymous"}
-				actx.err = errors.New("your token is invalid or expired")
+				actx.err = fmt.Errorf("your token is invalid or expired")
 			}
 			return true
 		}
 
 		// fallback
-		actx.err = errors.New("unknown ssh key")
+		actx.err = fmt.Errorf("unknown ssh key")
 		actx.user = dbmodels.User{Name: "Anonymous"}
 		return false
 	}

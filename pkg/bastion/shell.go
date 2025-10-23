@@ -3,7 +3,6 @@ package bastion // import "moul.io/sshportal/pkg/bastion"
 import (
 	"bufio"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"net/url"
@@ -517,7 +516,7 @@ GLOBAL OPTIONS:
 
 						if !c.Bool("confirm") {
 							fmt.Fprintf(s, "restore will erase and replace everything in the database.\nIf you are ok, add the '--confirm' to the restore command\n")
-							return errors.New("")
+							return fmt.Errorf("")
 						}
 
 						tx := db.Begin()
@@ -1747,7 +1746,7 @@ GLOBAL OPTIONS:
 						email := c.Args().First()
 						valid := utils.ValidateEmail(email)
 						if !valid {
-							return errors.New("invalid email")
+							return fmt.Errorf("invalid email")
 						}
 						name := strings.Split(email, "@")[0]
 						if c.String("name") != "" {

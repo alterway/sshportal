@@ -12,7 +12,6 @@ import (
 	"crypto/x509"
 	"encoding/base64"
 	"encoding/pem"
-	"errors"
 	"fmt"
 	"strings"
 	"unicode/utf8"
@@ -143,7 +142,7 @@ func ImportRSASSHKey(keyValue string) (*dbmodels.SSHKey, error) {
 	var privateKey *rsa.PrivateKey
 	var ok bool
 	if privateKey, ok = parsedKey.(*rsa.PrivateKey); !ok {
-		return nil, errors.New("key type not supported")
+		return nil, fmt.Errorf("key type not supported")
 	}
 	key.Length = uint(privateKey.PublicKey.N.BitLen())
 	// convert priv key to x509 format
@@ -188,7 +187,7 @@ func ImportEd25519SSHKey(keyValue string) (*dbmodels.SSHKey, error) {
 		if privateKeyPtr, ok := parsedKey.(*ed25519.PrivateKey); ok {
 			privateKey = *privateKeyPtr
 		} else {
-			return nil, errors.New("key type not supported")
+			return nil, fmt.Errorf("key type not supported")
 		}
 	}
 

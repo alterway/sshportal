@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/gliderlabs/ssh"
-	"github.com/pkg/errors"
 	gossh "golang.org/x/crypto/ssh"
 )
 
@@ -137,7 +136,7 @@ func pipe(lreqs, rreqs <-chan *gossh.Request, lch, rch gossh.Channel, sessConfig
 		filename := filepath.Join(sessConfig.LogsLocation, fmt.Sprintf("%s-%s-%s-%d-%s", user, username, channeltype, sessionID, time.Now().Format(time.RFC3339)))
 		f, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0440)
 		if err != nil {
-			return errors.Wrap(err, "open log file")
+			return fmt.Errorf("can't open log file: %v", err)
 		}
 		defer func() {
 			_ = f.Close()

@@ -9,7 +9,6 @@ require (
 	github.com/gliderlabs/ssh v0.3.8
 	github.com/go-gormigrate/gormigrate/v2 v2.1.5
 	github.com/olekukonko/tablewriter v1.1.0
-	github.com/pkg/errors v0.9.1
 	github.com/reiver/go-oi v1.0.0
 	github.com/reiver/go-telnet v0.0.0-20250617105250-7da9ad70a2b2
 	github.com/urfave/cli v1.22.17
