@@ -17,7 +17,7 @@ import (
 	"moul.io/sshportal/pkg/bastion"
 
 	"github.com/gliderlabs/ssh"
-	"github.com/urfave/cli"
+	"github.com/urfave/cli/v2"
 	gossh "golang.org/x/crypto/ssh"
 )
 

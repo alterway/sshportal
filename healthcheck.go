@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/urfave/cli"
+	"github.com/urfave/cli/v2"
 	gossh "golang.org/x/crypto/ssh"
 )
 
