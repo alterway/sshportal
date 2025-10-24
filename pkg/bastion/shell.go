@@ -23,7 +23,7 @@ import (
 	"github.com/gliderlabs/ssh"
 	"github.com/olekukonko/tablewriter"
 	"github.com/olekukonko/tablewriter/tw"
-	"github.com/urfave/cli"
+	"github.com/urfave/cli/v2"
 	gossh "golang.org/x/crypto/ssh"
 	"golang.org/x/crypto/ssh/terminal" // nolint:staticcheck
 )
@@ -69,7 +69,7 @@ GLOBAL OPTIONS:
    {{end}}{{end}}
 `
 	cli.OsExiter = func(c int) {}
-	cli.HelpFlag = cli.BoolFlag{
+	cli.HelpFlag = &cli.BoolFlag{
 		Name:   "help, h",
 		Hidden: true,
 	}
@@ -84,24 +84,24 @@ GLOBAL OPTIONS:
 		db     = actx.db
 	)
 
-	app.Commands = []cli.Command{
+	app.Commands = []*cli.Command{
 		{
 			Name:  "acl",
 			Usage: "Manages ACLs",
-			Subcommands: []cli.Command{
+			Subcommands: []*cli.Command{
 				{
 					Name:        "create",
 					Usage:       "Creates a new ACL",
 					Description: "$> acl create -",
 					Flags: []cli.Flag{
-						cli.StringSliceFlag{Name: "hostgroup, hg", Usage: "Assigns `HOSTGROUPS` to the acl"},
-						cli.StringSliceFlag{Name: "usergroup, ug", Usage: "Assigns `USERGROUP` to the acl"},
-						cli.StringFlag{Name: "pattern", Usage: "Assigns a host pattern to the acl"},
-						cli.StringFlag{Name: "comment", Usage: "Adds a comment"},
-						cli.StringFlag{Name: "action", Usage: "Assigns the ACL action (allow,deny)", Value: string(dbmodels.ACLActionAllow)},
-						cli.UintFlag{Name: "weight, w", Usage: "Assigns the ACL weight (priority)"},
-						cli.StringFlag{Name: "inception, i", Usage: "Assigns inception date-time"},
-						cli.StringFlag{Name: "expiration, e", Usage: "Assigns expiration date-time"},
+						&cli.StringSliceFlag{Name: "hostgroup, hg", Usage: "Assigns `HOSTGROUPS` to the acl"},
+						&cli.StringSliceFlag{Name: "usergroup, ug", Usage: "Assigns `USERGROUP` to the acl"},
+						&cli.StringFlag{Name: "pattern", Usage: "Assigns a host pattern to the acl"},
+						&cli.StringFlag{Name: "comment", Usage: "Adds a comment"},
+						&cli.StringFlag{Name: "action", Usage: "Assigns the ACL action (allow,deny)", Value: string(dbmodels.ACLActionAllow)},
+						&cli.UintFlag{Name: "weight, w", Usage: "Assigns the ACL weight (priority)"},
+						&cli.StringFlag{Name: "inception, i", Usage: "Assigns inception date-time"},
+						&cli.StringFlag{Name: "expiration, e", Usage: "Assigns expiration date-time"},
 					},
 					Action: func(c *cli.Context) error {
 						if err := myself.CheckRoles([]string{"admin"}); err != nil {
@@ -171,7 +171,7 @@ GLOBAL OPTIONS:
 						}
 
 						var acls []dbmodels.ACL
-						if err := dbmodels.ACLsPreload(dbmodels.ACLsByIdentifiers(db, c.Args())).Find(&acls).Error; err != nil {
+						if err := dbmodels.ACLsPreload(dbmodels.ACLsByIdentifiers(db, c.Args().Slice())).Find(&acls).Error; err != nil {
 							return err
 						}
 
@@ -183,8 +183,8 @@ GLOBAL OPTIONS:
 					Name:  "ls",
 					Usage: "Lists ACLs",
 					Flags: []cli.Flag{
-						cli.BoolFlag{Name: "latest, l", Usage: "Show the latest ACL"},
-						cli.BoolFlag{Name: "quiet, q", Usage: "Only display IDs"},
+						&cli.BoolFlag{Name: "latest, l", Usage: "Show the latest ACL"},
+						&cli.BoolFlag{Name: "quiet, q", Usage: "Only display IDs"},
 					},
 					Action: func(c *cli.Context) error {
 						if err := myself.CheckRoles([]string{"admin"}); err != nil {
@@ -284,25 +284,25 @@ GLOBAL OPTIONS:
 							return err
 						}
 
-						return dbmodels.ACLsByIdentifiers(db, c.Args()).Unscoped().Delete(&dbmodels.ACL{}).Error
+						return dbmodels.ACLsByIdentifiers(db, c.Args().Slice()).Unscoped().Delete(&dbmodels.ACL{}).Error
 					},
 				}, {
 					Name:      "update",
 					Usage:     "Updates an existing acl",
 					ArgsUsage: "ACL...",
 					Flags: []cli.Flag{
-						cli.StringFlag{Name: "action, a", Usage: "Update action"},
-						cli.StringFlag{Name: "pattern, p", Usage: "Update host-pattern"},
-						cli.UintFlag{Name: "weight, w", Usage: "Update weight"},
-						cli.StringFlag{Name: "inception, i", Usage: "Update inception date-time"},
-						cli.BoolFlag{Name: "unset-inception", Usage: "Unset inception date-time"},
-						cli.BoolFlag{Name: "unset-expiration", Usage: "Unset expiration date-time"},
-						cli.StringFlag{Name: "expiration, e", Usage: "Update expiration date-time"},
-						cli.StringFlag{Name: "comment, c", Usage: "Update comment"},
-						cli.StringSliceFlag{Name: "assign-usergroup, ug", Usage: "Assign the ACL to new `USERGROUPS`"},
-						cli.StringSliceFlag{Name: "unassign-usergroup", Usage: "Unassign the ACL from `USERGROUPS`"},
-						cli.StringSliceFlag{Name: "assign-hostgroup, hg", Usage: "Assign the ACL to new `HOSTGROUPS`"},
-						cli.StringSliceFlag{Name: "unassign-hostgroup", Usage: "Unassign the ACL from `HOSTGROUPS`"},
+						&cli.StringFlag{Name: "action, a", Usage: "Update action"},
+						&cli.StringFlag{Name: "pattern, p", Usage: "Update host-pattern"},
+						&cli.UintFlag{Name: "weight, w", Usage: "Update weight"},
+						&cli.StringFlag{Name: "inception, i", Usage: "Update inception date-time"},
+						&cli.BoolFlag{Name: "unset-inception", Usage: "Unset inception date-time"},
+						&cli.BoolFlag{Name: "unset-expiration", Usage: "Unset expiration date-time"},
+						&cli.StringFlag{Name: "expiration, e", Usage: "Update expiration date-time"},
+						&cli.StringFlag{Name: "comment, c", Usage: "Update comment"},
+						&cli.StringSliceFlag{Name: "assign-usergroup, ug", Usage: "Assign the ACL to new `USERGROUPS`"},
+						&cli.StringSliceFlag{Name: "unassign-usergroup", Usage: "Unassign the ACL from `USERGROUPS`"},
+						&cli.StringSliceFlag{Name: "assign-hostgroup, hg", Usage: "Assign the ACL to new `HOSTGROUPS`"},
+						&cli.StringSliceFlag{Name: "unassign-hostgroup", Usage: "Unassign the ACL from `HOSTGROUPS`"},
 					},
 					Action: func(c *cli.Context) error {
 						if c.NArg() < 1 {
@@ -313,7 +313,7 @@ GLOBAL OPTIONS:
 						}
 
 						var acls []*dbmodels.ACL
-						if err := dbmodels.ACLsByIdentifiers(db, c.Args()).Find(&acls).Error; err != nil {
+						if err := dbmodels.ACLsByIdentifiers(db, c.Args().Slice()).Find(&acls).Error; err != nil {
 							return err
 						}
 
@@ -406,14 +406,14 @@ GLOBAL OPTIONS:
 		}, {
 			Name:  "config",
 			Usage: "Manages global configuration",
-			Subcommands: []cli.Command{
+			Subcommands: []*cli.Command{
 				{
 					Name:  "backup",
 					Usage: "Dumps a backup",
 					Flags: []cli.Flag{
-						cli.BoolFlag{Name: "indent", Usage: "uses indented JSON"},
-						cli.BoolFlag{Name: "decrypt", Usage: "decrypt sensitive data"},
-						cli.BoolFlag{Name: "ignore-events", Usage: "do not backup events data"},
+						&cli.BoolFlag{Name: "indent", Usage: "uses indented JSON"},
+						&cli.BoolFlag{Name: "decrypt", Usage: "decrypt sensitive data"},
+						&cli.BoolFlag{Name: "ignore-events", Usage: "do not backup events data"},
 					},
 					Description: "ssh admin@portal config backup > sshportal.bkp",
 					Action: func(c *cli.Context) error {
@@ -488,8 +488,8 @@ GLOBAL OPTIONS:
 					Usage:       "Restores a backup",
 					Description: "ssh admin@portal config restore < sshportal.bkp",
 					Flags: []cli.Flag{
-						cli.BoolFlag{Name: "confirm", Usage: "yes, I want to replace everything with this backup!"},
-						cli.BoolFlag{Name: "decrypt", Usage: "do not encrypt sensitive data"},
+						&cli.BoolFlag{Name: "confirm", Usage: "yes, I want to replace everything with this backup!"},
+						&cli.BoolFlag{Name: "decrypt", Usage: "do not encrypt sensitive data"},
 					},
 					Action: func(c *cli.Context) error {
 						if err := myself.CheckRoles([]string{"admin"}); err != nil {
@@ -651,7 +651,7 @@ GLOBAL OPTIONS:
 		}, {
 			Name:  "event",
 			Usage: "Manages events",
-			Subcommands: []cli.Command{
+			Subcommands: []*cli.Command{
 				{
 					Name:      "inspect",
 					Usage:     "Shows detailed information on one or more events",
@@ -666,7 +666,7 @@ GLOBAL OPTIONS:
 						}
 
 						var events []*dbmodels.Event
-						if err := dbmodels.EventsPreload(dbmodels.EventsByIdentifiers(db, c.Args())).Find(&events).Error; err != nil {
+						if err := dbmodels.EventsPreload(dbmodels.EventsByIdentifiers(db, c.Args().Slice())).Find(&events).Error; err != nil {
 							return err
 						}
 
@@ -686,8 +686,8 @@ GLOBAL OPTIONS:
 					Name:  "ls",
 					Usage: "Lists events",
 					Flags: []cli.Flag{
-						cli.BoolFlag{Name: "latest, l", Usage: "Show the latest event"},
-						cli.BoolFlag{Name: "quiet, q", Usage: "Only display IDs"},
+						&cli.BoolFlag{Name: "latest, l", Usage: "Show the latest event"},
+						&cli.BoolFlag{Name: "quiet, q", Usage: "Only display IDs"},
 					},
 					Action: func(c *cli.Context) error {
 						if err := myself.CheckRoles([]string{"admin"}); err != nil {
@@ -752,20 +752,20 @@ GLOBAL OPTIONS:
 		}, {
 			Name:  "host",
 			Usage: "Manages hosts",
-			Subcommands: []cli.Command{
+			Subcommands: []*cli.Command{
 				{
 					Name:        "create",
 					Usage:       "Creates a new host",
 					ArgsUsage:   "[scheme://]<user>[:<password>]@<host>[:<port>]",
 					Description: "$> host create bart@foo.org\n   $> host create bob:marley@example.com:2222",
 					Flags: []cli.Flag{
-						cli.StringFlag{Name: "name, n", Usage: "Assigns a name to the host"},
-						cli.StringFlag{Name: "password, p", Usage: "If present, sshportal will use password-based authentication"},
-						cli.StringFlag{Name: "comment, c"},
-						cli.StringFlag{Name: "key, k", Usage: "`KEY` to use for authentication"},
-						cli.StringFlag{Name: "hop, o", Usage: "Hop to use for connecting to the server"},
-						cli.StringFlag{Name: "logging, l", Usage: "Logging mode (disabled, input, everything)"},
-						cli.StringSliceFlag{Name: "group, g", Usage: "Assigns the host to `HOSTGROUPS` (default: \"default\")"},
+						&cli.StringFlag{Name: "name, n", Usage: "Assigns a name to the host"},
+						&cli.StringFlag{Name: "password, p", Usage: "If present, sshportal will use password-based authentication"},
+						&cli.StringFlag{Name: "comment, c"},
+						&cli.StringFlag{Name: "key, k", Usage: "`KEY` to use for authentication"},
+						&cli.StringFlag{Name: "hop, o", Usage: "Hop to use for connecting to the server"},
+						&cli.StringFlag{Name: "logging, l", Usage: "Logging mode (disabled, input, everything)"},
+						&	cli.StringSliceFlag{Name: "group, g", Usage: "Assigns the host to `HOSTGROUPS` (default: \"default\")"},
 					},
 					Action: func(c *cli.Context) error {
 						if c.NArg() != 1 {
@@ -855,7 +855,7 @@ GLOBAL OPTIONS:
 					Usage:     "Shows detailed information on one or more hosts",
 					ArgsUsage: "HOST...",
 					Flags: []cli.Flag{
-						cli.BoolFlag{Name: "decrypt", Usage: "Decrypt sensitive data"},
+						&cli.BoolFlag{Name: "decrypt", Usage: "Decrypt sensitive data"},
 					},
 					Action: func(c *cli.Context) error {
 						if c.NArg() < 1 {
@@ -868,11 +868,11 @@ GLOBAL OPTIONS:
 
 						var hosts []*dbmodels.Host
 						if myself.HasRole("admin") {
-							if err := dbmodels.HostsByIdentifiers(db.Preload("Groups").Preload("SSHKey"), c.Args()).Find(&hosts).Error; err != nil {
+							if err := dbmodels.HostsByIdentifiers(db.Preload("Groups").Preload("SSHKey"), c.Args().Slice()).Find(&hosts).Error; err != nil {
 								return err
 							}
 						} else {
-							if err := dbmodels.HostsByIdentifiers(db.Preload("Groups"), c.Args()).Find(&hosts).Error; err != nil {
+							if err := dbmodels.HostsByIdentifiers(db.Preload("Groups"), c.Args().Slice()).Find(&hosts).Error; err != nil {
 								return err
 							}
 						}
@@ -893,8 +893,8 @@ GLOBAL OPTIONS:
 					Name:  "ls",
 					Usage: "Lists hosts",
 					Flags: []cli.Flag{
-						cli.BoolFlag{Name: "latest, l", Usage: "Show the latest host"},
-						cli.BoolFlag{Name: "quiet, q", Usage: "Only display IDs"},
+						&cli.BoolFlag{Name: "latest, l", Usage: "Show the latest host"},
+						&cli.BoolFlag{Name: "quiet, q", Usage: "Only display IDs"},
 					},
 					Action: func(c *cli.Context) error {
 						if err := myself.CheckRoles([]string{"admin", "listhosts"}); err != nil {
@@ -999,23 +999,23 @@ GLOBAL OPTIONS:
 							return err
 						}
 
-						return dbmodels.HostsByIdentifiers(db, c.Args()).Unscoped().Delete(&dbmodels.Host{}).Error
+						return dbmodels.HostsByIdentifiers(db, c.Args().Slice()).Unscoped().Delete(&dbmodels.Host{}).Error
 					},
 				}, {
 					Name:      "update",
 					Usage:     "Updates an existing host",
 					ArgsUsage: "HOST...",
 					Flags: []cli.Flag{
-						cli.StringFlag{Name: "name, n", Usage: "Rename the host"},
-						cli.StringFlag{Name: "url, u", Usage: "Update connection URL"},
-						cli.StringFlag{Name: "comment, c", Usage: "Update/set a host comment"},
-						cli.StringFlag{Name: "key, k", Usage: "Link a `KEY` to use for authentication"},
-						cli.StringFlag{Name: "hop, o", Usage: "Change the hop to use for connecting to the server"},
-						cli.StringFlag{Name: "logging, l", Usage: "Logging mode (disabled, input, everything)"},
-						cli.BoolFlag{Name: "reset, r", Usage: "Reset host key associated with the server."},
-						cli.BoolFlag{Name: "unset-hop", Usage: "Remove the hop set for this host"},
-						cli.StringSliceFlag{Name: "assign-group, g", Usage: "Assign the host to a new `HOSTGROUPS`"},
-						cli.StringSliceFlag{Name: "unassign-group", Usage: "Unassign the host from a `HOSTGROUPS`"},
+						&cli.StringFlag{Name: "name, n", Usage: "Rename the host"},
+						&cli.StringFlag{Name: "url, u", Usage: "Update connection URL"},
+						&cli.StringFlag{Name: "comment, c", Usage: "Update/set a host comment"},
+						&cli.StringFlag{Name: "key, k", Usage: "Link a `KEY` to use for authentication"},
+						&cli.StringFlag{Name: "hop, o", Usage: "Change the hop to use for connecting to the server"},
+						&cli.StringFlag{Name: "logging, l", Usage: "Logging mode (disabled, input, everything)"},
+						&cli.BoolFlag{Name: "reset, r", Usage: "Reset host key associated with the server."},
+						&cli.BoolFlag{Name: "unset-hop", Usage: "Remove the hop set for this host"},
+						&cli.StringSliceFlag{Name: "assign-group, g", Usage: "Assign the host to a new `HOSTGROUPS`"},
+						&cli.StringSliceFlag{Name: "unassign-group", Usage: "Unassign the host from a `HOSTGROUPS`"},
 					},
 					Action: func(c *cli.Context) error {
 						if c.NArg() < 1 {
@@ -1027,7 +1027,7 @@ GLOBAL OPTIONS:
 						}
 
 						var hosts []dbmodels.Host
-						if err := dbmodels.HostsByIdentifiers(db, c.Args()).Find(&hosts).Error; err != nil {
+						if err := dbmodels.HostsByIdentifiers(db, c.Args().Slice()).Find(&hosts).Error; err != nil {
 							return err
 						}
 
@@ -1148,14 +1148,14 @@ GLOBAL OPTIONS:
 		}, {
 			Name:  "hostgroup",
 			Usage: "Manages host groups",
-			Subcommands: []cli.Command{
+			Subcommands: []*cli.Command{
 				{
 					Name:        "create",
 					Usage:       "Creates a new host group",
 					Description: "$> hostgroup create --name=prod",
 					Flags: []cli.Flag{
-						cli.StringFlag{Name: "name", Usage: "Assigns a name to the host group"},
-						cli.StringFlag{Name: "comment", Usage: "Adds a comment"},
+						&cli.StringFlag{Name: "name", Usage: "Assigns a name to the host group"},
+						&cli.StringFlag{Name: "comment", Usage: "Adds a comment"},
 					},
 					Action: func(c *cli.Context) error {
 						if err := myself.CheckRoles([]string{"admin"}); err != nil {
@@ -1194,7 +1194,7 @@ GLOBAL OPTIONS:
 						}
 
 						var hostGroups []dbmodels.HostGroup
-						if err := dbmodels.HostGroupsPreload(dbmodels.HostGroupsByIdentifiers(db, c.Args())).Find(&hostGroups).Error; err != nil {
+						if err := dbmodels.HostGroupsPreload(dbmodels.HostGroupsByIdentifiers(db, c.Args().Slice())).Find(&hostGroups).Error; err != nil {
 							return err
 						}
 
@@ -1206,8 +1206,8 @@ GLOBAL OPTIONS:
 					Name:  "ls",
 					Usage: "Lists host groups",
 					Flags: []cli.Flag{
-						cli.BoolFlag{Name: "latest, l", Usage: "Show the latest host group"},
-						cli.BoolFlag{Name: "quiet, q", Usage: "Only display IDs"},
+						&cli.BoolFlag{Name: "latest, l", Usage: "Show the latest host group"},
+						&cli.BoolFlag{Name: "quiet, q", Usage: "Only display IDs"},
 					},
 					Action: func(c *cli.Context) error {
 						if err := myself.CheckRoles([]string{"admin"}); err != nil {
@@ -1276,15 +1276,15 @@ GLOBAL OPTIONS:
 							return err
 						}
 
-						return dbmodels.HostGroupsByIdentifiers(db, c.Args()).Unscoped().Delete(&dbmodels.HostGroup{}).Error
+						return dbmodels.HostGroupsByIdentifiers(db, c.Args().Slice()).Unscoped().Delete(&dbmodels.HostGroup{}).Error
 					},
 				}, {
 					Name:      "update",
 					Usage:     "Updates a host group",
 					ArgsUsage: "HOSTGROUP...",
 					Flags: []cli.Flag{
-						cli.StringFlag{Name: "name", Usage: "Assigns a new name to the host group"},
-						cli.StringFlag{Name: "comment", Usage: "Adds a comment"},
+						&cli.StringFlag{Name: "name", Usage: "Assigns a new name to the host group"},
+						&cli.StringFlag{Name: "comment", Usage: "Adds a comment"},
 					},
 					Action: func(c *cli.Context) error {
 						if c.NArg() < 1 {
@@ -1296,7 +1296,7 @@ GLOBAL OPTIONS:
 						}
 
 						var hostgroups []*dbmodels.HostGroup
-						if err := dbmodels.HostGroupsByIdentifiers(db, c.Args()).Find(&hostgroups).Error; err != nil {
+						if err := dbmodels.HostGroupsByIdentifiers(db, c.Args().Slice()).Find(&hostgroups).Error; err != nil {
 							return err
 						}
 
@@ -1360,16 +1360,16 @@ GLOBAL OPTIONS:
 		}, {
 			Name:  "key",
 			Usage: "Manages keys",
-			Subcommands: []cli.Command{
+			Subcommands: []*cli.Command{
 				{
 					Name:        "create",
 					Usage:       "Creates a new key",
 					Description: "$> key create\n   $> key create --name=mykey",
 					Flags: []cli.Flag{
-						cli.StringFlag{Name: "name", Usage: "Assigns a name to the key"},
-						cli.StringFlag{Name: "type", Value: "ed25519"},
-						cli.UintFlag{Name: "length", Value: 0},
-						cli.StringFlag{Name: "comment", Usage: "Adds a comment"},
+						&cli.StringFlag{Name: "name", Usage: "Assigns a name to the key"},
+						&cli.StringFlag{Name: "type", Value: "ed25519"},
+						&cli.UintFlag{Name: "length", Value: 0},
+						&cli.StringFlag{Name: "comment", Usage: "Adds a comment"},
 					},
 					Action: func(c *cli.Context) error {
 						if err := myself.CheckRoles([]string{"admin"}); err != nil {
@@ -1424,9 +1424,9 @@ GLOBAL OPTIONS:
 					Usage:       "Imports an existing private key",
 					Description: "$> key import\n   $> key import --name=mykey --type=rsa",
 					Flags: []cli.Flag{
-						cli.StringFlag{Name: "name", Usage: "Assigns a name to the key"},
-						cli.StringFlag{Name: "type", Value: "ed25519", Usage: "Key type (rsa, ed25519)"},
-						cli.StringFlag{Name: "comment", Usage: "Adds a comment"},
+						&cli.StringFlag{Name: "name", Usage: "Assigns a name to the key"},
+						&cli.StringFlag{Name: "type", Value: "ed25519", Usage: "Key type (rsa, ed25519)"},
+						&cli.StringFlag{Name: "comment", Usage: "Adds a comment"},
 					},
 					Action: func(c *cli.Context) error {
 						if err := myself.CheckRoles([]string{"admin"}); err != nil {
@@ -1491,7 +1491,7 @@ GLOBAL OPTIONS:
 					Usage:     "Shows detailed information on one or more keys",
 					ArgsUsage: "KEY...",
 					Flags: []cli.Flag{
-						cli.BoolFlag{Name: "decrypt", Usage: "Decrypt sensitive data"},
+						&cli.BoolFlag{Name: "decrypt", Usage: "Decrypt sensitive data"},
 					},
 					Action: func(c *cli.Context) error {
 						if c.NArg() < 1 {
@@ -1503,7 +1503,7 @@ GLOBAL OPTIONS:
 						}
 
 						var keys []*dbmodels.SSHKey
-						if err := dbmodels.SSHKeysByIdentifiers(dbmodels.SSHKeysPreload(db), c.Args()).Find(&keys).Error; err != nil {
+						if err := dbmodels.SSHKeysByIdentifiers(dbmodels.SSHKeysPreload(db), c.Args().Slice()).Find(&keys).Error; err != nil {
 							return err
 						}
 
@@ -1523,8 +1523,8 @@ GLOBAL OPTIONS:
 					Name:  "ls",
 					Usage: "Lists keys",
 					Flags: []cli.Flag{
-						cli.BoolFlag{Name: "latest, l", Usage: "Show the latest key"},
-						cli.BoolFlag{Name: "quiet, q", Usage: "Only display IDs"},
+						&cli.BoolFlag{Name: "latest, l", Usage: "Show the latest key"},
+						&cli.BoolFlag{Name: "quiet, q", Usage: "Only display IDs"},
 					},
 					Action: func(c *cli.Context) error {
 						if err := myself.CheckRoles([]string{"admin"}); err != nil {
@@ -1602,7 +1602,7 @@ GLOBAL OPTIONS:
 							return err
 						}
 
-						return dbmodels.SSHKeysByIdentifiers(db, c.Args()).Unscoped().Delete(&dbmodels.SSHKey{}).Error
+						return dbmodels.SSHKeysByIdentifiers(db, c.Args().Slice()).Unscoped().Delete(&dbmodels.SSHKey{}).Error
 					},
 				}, {
 					Name:      "setup",
@@ -1616,7 +1616,7 @@ GLOBAL OPTIONS:
 						// not checking roles, everyone with an account can see how to enroll new hosts
 
 						var key dbmodels.SSHKey
-						if err := dbmodels.SSHKeysByIdentifiers(db, c.Args()).First(&key).Error; err != nil {
+						if err := dbmodels.SSHKeysByIdentifiers(db, c.Args().Slice()).First(&key).Error; err != nil {
 							return err
 						}
 						fmt.Fprintf(s, "umask 077; mkdir -p .ssh; echo %s sshportal >> .ssh/authorized_keys\n", key.PubKey)
@@ -1636,7 +1636,7 @@ GLOBAL OPTIONS:
 						}
 
 						var key dbmodels.SSHKey
-						if err := dbmodels.SSHKeysByIdentifiers(dbmodels.SSHKeysPreload(db), c.Args()).First(&key).Error; err != nil {
+						if err := dbmodels.SSHKeysByIdentifiers(dbmodels.SSHKeysPreload(db), c.Args().Slice()).First(&key).Error; err != nil {
 							return err
 						}
 
@@ -1702,7 +1702,7 @@ GLOBAL OPTIONS:
 		}, {
 			Name:  "user",
 			Usage: "Manages users",
-			Subcommands: []cli.Command{
+			Subcommands: []*cli.Command{
 				{
 					Name:      "inspect",
 					Usage:     "Shows detailed information on one or more users",
@@ -1717,7 +1717,7 @@ GLOBAL OPTIONS:
 						}
 
 						var users []dbmodels.User
-						if err := dbmodels.UsersPreload(dbmodels.UsersByIdentifiers(db, c.Args())).Find(&users).Error; err != nil {
+						if err := dbmodels.UsersPreload(dbmodels.UsersByIdentifiers(db, c.Args().Slice())).Find(&users).Error; err != nil {
 							return err
 						}
 
@@ -1731,9 +1731,9 @@ GLOBAL OPTIONS:
 					Usage:       "Invites a new user",
 					Description: "$> user invite bob@example.com\n   $> user invite --name=Robert bob@example.com",
 					Flags: []cli.Flag{
-						cli.StringFlag{Name: "name", Usage: "Assigns a name to the user"},
-						cli.StringFlag{Name: "comment", Usage: "Adds a comment"},
-						cli.StringSliceFlag{Name: "group, g", Usage: "Names or IDs of `USERGROUPS` (default: \"default\")"},
+						&cli.StringFlag{Name: "name", Usage: "Assigns a name to the user"},
+						&cli.StringFlag{Name: "comment", Usage: "Adds a comment"},
+						&cli.StringSliceFlag{Name: "group, g", Usage: "Names or IDs of `USERGROUPS` (default: \"default\")"},
 					},
 					Action: func(c *cli.Context) error {
 						if c.NArg() != 1 {
@@ -1789,8 +1789,8 @@ GLOBAL OPTIONS:
 					Name:  "ls",
 					Usage: "Lists users",
 					Flags: []cli.Flag{
-						cli.BoolFlag{Name: "latest, l", Usage: "Show the latest user"},
-						cli.BoolFlag{Name: "quiet, q", Usage: "Only display IDs"},
+						&cli.BoolFlag{Name: "latest, l", Usage: "Show the latest user"},
+						&cli.BoolFlag{Name: "quiet, q", Usage: "Only display IDs"},
 					},
 					Action: func(c *cli.Context) error {
 						if err := myself.CheckRoles([]string{"admin"}); err != nil {
@@ -1879,21 +1879,21 @@ GLOBAL OPTIONS:
 							return err
 						}
 
-						return dbmodels.UsersByIdentifiers(db, c.Args()).Unscoped().Delete(&dbmodels.User{}).Error
+						return dbmodels.UsersByIdentifiers(db, c.Args().Slice()).Unscoped().Delete(&dbmodels.User{}).Error
 					},
 				}, {
 					Name:      "update",
 					Usage:     "Updates an existing user",
 					ArgsUsage: "USER...",
 					Flags: []cli.Flag{
-						cli.StringFlag{Name: "name, n", Usage: "Renames the user"},
-						cli.StringFlag{Name: "email, e", Usage: "Updates the email"},
-						cli.BoolFlag{Name: "gen_invite, G", Usage: "Generate a new invite token"},
-						cli.BoolFlag{Name: "remove_invite, R", Usage: "Remove invite token"},
-						cli.StringSliceFlag{Name: "assign-role, r", Usage: "Assign the user to new `USERROLES`"},
-						cli.StringSliceFlag{Name: "unassign-role", Usage: "Unassign the user from `USERROLES`"},
-						cli.StringSliceFlag{Name: "assign-group, g", Usage: "Assign the user to new `USERGROUPS`"},
-						cli.StringSliceFlag{Name: "unassign-group", Usage: "Unassign the user from `USERGROUPS`"},
+						&cli.StringFlag{Name: "name, n", Usage: "Renames the user"},
+						&cli.StringFlag{Name: "email, e", Usage: "Updates the email"},
+						&cli.BoolFlag{Name: "gen_invite, G", Usage: "Generate a new invite token"},
+						&cli.BoolFlag{Name: "remove_invite, R", Usage: "Remove invite token"},
+						&cli.StringSliceFlag{Name: "assign-role, r", Usage: "Assign the user to new `USERROLES`"},
+						&cli.StringSliceFlag{Name: "unassign-role", Usage: "Unassign the user from `USERROLES`"},
+						&cli.StringSliceFlag{Name: "assign-group, g", Usage: "Assign the user to new `USERGROUPS`"},
+						&cli.StringSliceFlag{Name: "unassign-group", Usage: "Unassign the user from `USERGROUPS`"},
 					},
 					Action: func(c *cli.Context) error {
 						if c.NArg() < 1 {
@@ -1906,7 +1906,7 @@ GLOBAL OPTIONS:
 
 						// FIXME: check if unset-admin + user == myself
 						var users []*dbmodels.User
-						if err := dbmodels.UsersByIdentifiers(db, c.Args()).Find(&users).Error; err != nil {
+						if err := dbmodels.UsersByIdentifiers(db, c.Args().Slice()).Find(&users).Error; err != nil {
 							return err
 						}
 
@@ -2006,14 +2006,14 @@ GLOBAL OPTIONS:
 		}, {
 			Name:  "usergroup",
 			Usage: "Manages user groups",
-			Subcommands: []cli.Command{
+			Subcommands: []*cli.Command{
 				{
 					Name:        "create",
 					Usage:       "Creates a new user group",
 					Description: "$> usergroup create --name=prod",
 					Flags: []cli.Flag{
-						cli.StringFlag{Name: "name", Usage: "Assigns a name to the user group"},
-						cli.StringFlag{Name: "comment", Usage: "Adds a comment"},
+						&cli.StringFlag{Name: "name", Usage: "Assigns a name to the user group"},
+						&cli.StringFlag{Name: "comment", Usage: "Adds a comment"},
 					},
 					Action: func(c *cli.Context) error {
 						if err := myself.CheckRoles([]string{"admin"}); err != nil {
@@ -2056,7 +2056,7 @@ GLOBAL OPTIONS:
 						}
 
 						var userGroups []dbmodels.UserGroup
-						if err := dbmodels.UserGroupsPreload(dbmodels.UserGroupsByIdentifiers(db, c.Args())).Find(&userGroups).Error; err != nil {
+						if err := dbmodels.UserGroupsPreload(dbmodels.UserGroupsByIdentifiers(db, c.Args().Slice())).Find(&userGroups).Error; err != nil {
 							return err
 						}
 
@@ -2068,8 +2068,8 @@ GLOBAL OPTIONS:
 					Name:  "ls",
 					Usage: "Lists user groups",
 					Flags: []cli.Flag{
-						cli.BoolFlag{Name: "latest, l", Usage: "Show the latest user group"},
-						cli.BoolFlag{Name: "quiet, q", Usage: "Only display IDs"},
+						&cli.BoolFlag{Name: "latest, l", Usage: "Show the latest user group"},
+						&cli.BoolFlag{Name: "quiet, q", Usage: "Only display IDs"},
 					},
 					Action: func(c *cli.Context) error {
 						if err := myself.CheckRoles([]string{"admin"}); err != nil {
@@ -2137,15 +2137,15 @@ GLOBAL OPTIONS:
 							return err
 						}
 
-						return dbmodels.UserGroupsByIdentifiers(db, c.Args()).Unscoped().Delete(&dbmodels.UserGroup{}).Error
+						return dbmodels.UserGroupsByIdentifiers(db, c.Args().Slice()).Unscoped().Delete(&dbmodels.UserGroup{}).Error
 					},
 				}, {
 					Name:      "update",
 					Usage:     "Updates a user group",
 					ArgsUsage: "USERGROUP...",
 					Flags: []cli.Flag{
-						cli.StringFlag{Name: "name", Usage: "Assigns a new name to the user group"},
-						cli.StringFlag{Name: "comment", Usage: "Adds a comment"},
+						&cli.StringFlag{Name: "name", Usage: "Assigns a new name to the user group"},
+						&cli.StringFlag{Name: "comment", Usage: "Adds a comment"},
 					},
 					Action: func(c *cli.Context) error {
 						if c.NArg() < 1 {
@@ -2157,7 +2157,7 @@ GLOBAL OPTIONS:
 						}
 
 						var usergroups []*dbmodels.UserGroup
-						if err := dbmodels.UserGroupsByIdentifiers(db, c.Args()).Find(&usergroups).Error; err != nil {
+						if err := dbmodels.UserGroupsByIdentifiers(db, c.Args().Slice()).Find(&usergroups).Error; err != nil {
 							return err
 						}
 
@@ -2185,14 +2185,14 @@ GLOBAL OPTIONS:
 		}, {
 			Name:  "userkey",
 			Usage: "Manages userkeys",
-			Subcommands: []cli.Command{
+			Subcommands: []*cli.Command{
 				{
 					Name:        "create",
 					ArgsUsage:   "<user ID or email>",
 					Usage:       "Creates a new userkey for an existing user",
 					Description: "$> userkey create bob",
 					Flags: []cli.Flag{
-						cli.StringFlag{Name: "comment", Usage: "Adds a comment"},
+						&cli.StringFlag{Name: "comment", Usage: "Adds a comment"},
 					},
 					Action: func(c *cli.Context) error {
 						if c.NArg() != 1 {
@@ -2204,7 +2204,7 @@ GLOBAL OPTIONS:
 						}
 
 						var user dbmodels.User
-						if err := dbmodels.UsersByIdentifiers(db, c.Args()).First(&user).Error; err != nil {
+						if err := dbmodels.UsersByIdentifiers(db, c.Args().Slice()).First(&user).Error; err != nil {
 							return fmt.Errorf("user %s does not exist ", c.Args().First())
 						}
 
@@ -2276,7 +2276,7 @@ GLOBAL OPTIONS:
 						}
 
 						var userKeys []dbmodels.UserKey
-						if err := dbmodels.UserKeysPreload(dbmodels.UserKeysByIdentifiers(db, c.Args())).Find(&userKeys).Error; err != nil {
+						if err := dbmodels.UserKeysPreload(dbmodels.UserKeysByIdentifiers(db, c.Args().Slice())).Find(&userKeys).Error; err != nil {
 							return err
 						}
 
@@ -2288,8 +2288,8 @@ GLOBAL OPTIONS:
 					Name:  "ls",
 					Usage: "Lists userkeys",
 					Flags: []cli.Flag{
-						cli.BoolFlag{Name: "latest, l", Usage: "Show the latest user key"},
-						cli.BoolFlag{Name: "quiet, q", Usage: "Only display IDs"},
+						&cli.BoolFlag{Name: "latest, l", Usage: "Show the latest user key"},
+						&cli.BoolFlag{Name: "quiet, q", Usage: "Only display IDs"},
 					},
 					Action: func(c *cli.Context) error {
 						if err := myself.CheckRoles([]string{"admin"}); err != nil {
@@ -2365,9 +2365,9 @@ GLOBAL OPTIONS:
 						if err := myself.CheckRoles([]string{"admin"}); err != nil {
 							return err
 						}
-						if err := dbmodels.UserKeysByIdentifiers(db, c.Args()).Find(&dbmodels.UserKey{}).Error; err != nil {
+						if err := dbmodels.UserKeysByIdentifiers(db, c.Args().Slice()).Find(&dbmodels.UserKey{}).Error; err != nil {
 							var user dbmodels.User
-							if err := dbmodels.UsersByIdentifiers(db, c.Args()).First(&user).Error; err != nil {
+							if err := dbmodels.UsersByIdentifiers(db, c.Args().Slice()).First(&user).Error; err != nil {
 								return err
 							}
 							if err := dbmodels.UserKeysByUserID(db, []string{fmt.Sprint(user.ID)}).Find(&dbmodels.UserKey{}).Error; err != nil {
@@ -2375,14 +2375,14 @@ GLOBAL OPTIONS:
 							}
 							return dbmodels.UserKeysByUserID(db, []string{fmt.Sprint(user.ID)}).Unscoped().Delete(&dbmodels.UserKey{}).Error
 						}
-						return dbmodels.UserKeysByIdentifiers(db, c.Args()).Unscoped().Delete(&dbmodels.UserKey{}).Error
+						return dbmodels.UserKeysByIdentifiers(db, c.Args().Slice()).Unscoped().Delete(&dbmodels.UserKey{}).Error
 					},
 				},
 			},
 		}, {
 			Name:  "session",
 			Usage: "Manages sessions",
-			Subcommands: []cli.Command{
+			Subcommands: []*cli.Command{
 				{
 					Name:      "inspect",
 					Usage:     "Shows detailed information on one or more sessions",
@@ -2397,7 +2397,7 @@ GLOBAL OPTIONS:
 						}
 
 						var sessions []dbmodels.Session
-						if err := dbmodels.SessionsPreload(dbmodels.SessionsByIdentifiers(db, c.Args())).Find(&sessions).Error; err != nil {
+						if err := dbmodels.SessionsPreload(dbmodels.SessionsByIdentifiers(db, c.Args().Slice())).Find(&sessions).Error; err != nil {
 							return err
 						}
 
@@ -2409,9 +2409,9 @@ GLOBAL OPTIONS:
 					Name:  "ls",
 					Usage: "Lists sessions",
 					Flags: []cli.Flag{
-						cli.BoolFlag{Name: "latest, l", Usage: "Show the latest session"},
-						cli.BoolFlag{Name: "active, a", Usage: "Show only active session"},
-						cli.BoolFlag{Name: "quiet, q", Usage: "Only display IDs"},
+						&cli.BoolFlag{Name: "latest, l", Usage: "Show the latest session"},
+						&cli.BoolFlag{Name: "active, a", Usage: "Show only active session"},
+						&cli.BoolFlag{Name: "quiet, q", Usage: "Only display IDs"},
 					},
 					Action: func(c *cli.Context) error {
 						if err := myself.CheckRoles([]string{"admin"}); err != nil {
@@ -2551,26 +2551,13 @@ GLOBAL OPTIONS:
 			}
 			dbmodels.NewEvent("shell", words[0]).SetAuthor(myself).SetArg("interactive", true).SetArg("args", words[1:]).Log(db)
 			if err := app.Run(append([]string{"config"}, words...)); err != nil {
-				if cliErr, ok := err.(*cli.ExitError); ok {
-					if cliErr.ExitCode() != 0 {
-						fmt.Fprintf(s, "error: %v\n", err)
-					}
-					// s.Exit(cliErr.ExitCode())
-				} else {
 					fmt.Fprintf(s, "error: %v\n", err)
-				}
 			}
 		}
-	} else { // oneshot mode
+	} else { // uninteractive mode
 		dbmodels.NewEvent("shell", sshCommand[0]).SetAuthor(myself).SetArg("interactive", false).SetArg("args", sshCommand[1:]).Log(db)
 		if err := app.Run(append([]string{"config"}, sshCommand...)); err != nil {
-			if errMsg := err.Error(); errMsg != "" {
-				fmt.Fprintf(s, "error: %s\n", errMsg)
-			}
-			if cliErr, ok := err.(*cli.ExitError); ok {
-				return s.Exit(cliErr.ExitCode())
-			}
-			return s.Exit(1)
+			return cli.Exit(err, 1)
 		}
 	}
 
