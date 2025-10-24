@@ -6,7 +6,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 )
 
 // testServer is an hidden handler used for integration tests

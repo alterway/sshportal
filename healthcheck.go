@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 	gossh "golang.org/x/crypto/ssh"
 )
 
@@ -35,7 +35,7 @@ func healthcheck(addr string, wait, quiet bool) error {
 
 	if err := healthcheckOnce(addr, cfg, quiet); err != nil {
 		if quiet {
-			return cli.NewExitError("", 1)
+			return cli.Exit("", 1)
 		}
 		return err
 	}

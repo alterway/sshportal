@@ -17,7 +17,7 @@ import (
 	"alterway/sshportal/pkg/bastion"
 
 	"github.com/gliderlabs/ssh"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 	gossh "golang.org/x/crypto/ssh"
 )
 
@@ -31,7 +31,7 @@ type serverConfig struct {
 	aclCheckCmd     string
 }
 
-func parseServerConfig(c *cli.Context) (*serverConfig, error) {
+func parseServerConfig(c *cli.Command) (*serverConfig, error) {
 	ret := &serverConfig{
 		aesKey:       c.String("aes-key"),
 		dbDriver:     c.String("db-driver"),
