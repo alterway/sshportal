@@ -1,10 +1,11 @@
 package bastion // import "moul.io/sshportal/pkg/bastion"
 
 import (
-	"os"
 	"fmt"
+	"os"
 	"path/filepath"
 	"testing"
+
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"moul.io/sshportal/pkg/dbmodels"

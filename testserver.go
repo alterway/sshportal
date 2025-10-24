@@ -4,6 +4,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -14,11 +15,11 @@ import (
 
 	"github.com/creack/pty"
 	"github.com/gliderlabs/ssh"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 )
 
 // testServer is an hidden handler used for integration tests
-func testServer(_ *cli.Context) error {
+func testServer(_ context.Context, _ *cli.Command) error {
 	ssh.Handle(func(s ssh.Session) {
 		helloMsg := struct {
 			User    string
