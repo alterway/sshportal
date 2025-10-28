@@ -1,4 +1,4 @@
-package crypto // import "moul.io/sshportal/pkg/crypto"
+package crypto // import "alterway/sshportal/pkg/crypto"
 
 import (
 	"encoding/base64"

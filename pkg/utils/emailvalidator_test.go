@@ -3,7 +3,7 @@ package utils_test
 import (
 	"testing"
 
-	"moul.io/sshportal/pkg/utils"
+	"alterway/sshportal/pkg/utils"
 )
 
 func TestValidateEmail(t *testing.T) {

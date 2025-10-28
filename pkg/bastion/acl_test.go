@@ -1,13 +1,14 @@
-package bastion // import "moul.io/sshportal/pkg/bastion"
+package bastion // import "alterway/sshportal/pkg/bastion"
 
 import (
-	"os"
+	"alterway/sshportal/pkg/dbmodels"
 	"fmt"
+	"os"
 	"path/filepath"
 	"testing"
+
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
-	"moul.io/sshportal/pkg/dbmodels"
 )
 
 func SetupBase(aesKey string) (*gorm.DB, string, error) {

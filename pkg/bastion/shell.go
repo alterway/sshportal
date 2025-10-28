@@ -1,4 +1,4 @@
-package bastion // import "moul.io/sshportal/pkg/bastion"
+package bastion // import "alterway/sshportal/pkg/bastion"
 
 import (
 	"bufio"
@@ -12,6 +12,10 @@ import (
 	"strings"
 	"time"
 
+	"alterway/sshportal/pkg/crypto"
+	"alterway/sshportal/pkg/dbmodels"
+	"alterway/sshportal/pkg/utils"
+
 	shlex "github.com/anmitsu/go-shlex"
 	"github.com/asaskevich/govalidator"
 	"github.com/docker/docker/pkg/namesgenerator"
@@ -22,9 +26,6 @@ import (
 	"github.com/urfave/cli"
 	gossh "golang.org/x/crypto/ssh"
 	"golang.org/x/crypto/ssh/terminal" // nolint:staticcheck
-	"moul.io/sshportal/pkg/crypto"
-	"moul.io/sshportal/pkg/dbmodels"
-	"moul.io/sshportal/pkg/utils"
 )
 
 var banner = `

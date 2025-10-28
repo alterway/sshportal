@@ -9,7 +9,7 @@ debug: false
 ## SSH Portal Docker image
 ##
 image:
-  repository: moul/sshportal
+  repository: alterway/sshportal
   pullPolicy: IfNotPresent
 
 ## Reference to one or more secrets to be used when pulling images

@@ -1,3 +1,3 @@
 # Changelog
 
-Here: https://github.com/moul/sshportal/releases
+Here: https://github.com/alterway/sshportal/releases

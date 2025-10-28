@@ -1,4 +1,4 @@
-package crypto // import "moul.io/sshportal/pkg/crypto"
+package crypto // import "alterway/sshportal/pkg/crypto"
 
 import (
 	"bytes"
@@ -16,8 +16,9 @@ import (
 	"strings"
 	"unicode/utf8"
 
+	"alterway/sshportal/pkg/dbmodels"
+
 	gossh "golang.org/x/crypto/ssh"
-	"moul.io/sshportal/pkg/dbmodels"
 )
 
 func NewSSHKey(keyType string, length uint) (*dbmodels.SSHKey, error) {

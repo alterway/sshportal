@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"moul.io/sshportal/pkg/dbmodels"
+	"alterway/sshportal/pkg/dbmodels"
 )
 
 // ACLHookTimeout is timeout for external ACL hook execution

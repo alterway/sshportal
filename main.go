@@ -1,4 +1,4 @@
-package main // import "moul.io/sshportal"
+package main // import "alterway/sshportal"
 
 import (
 	"log"
@@ -20,7 +20,6 @@ func main() {
 	app.Name = path.Base(os.Args[0])
 	app.Author = "Manfred Touron"
 	app.Version = GitTag + " (" + GitSha + ")"
-	app.Email = "https://moul.io/sshportal"
 	app.Commands = []cli.Command{
 		{
 			Name:  "server",

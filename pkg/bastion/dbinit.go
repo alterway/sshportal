@@ -1,4 +1,4 @@
-package bastion // import "moul.io/sshportal/pkg/bastion"
+package bastion // import "alterway/sshportal/pkg/bastion"
 
 import (
 	"crypto/rand"
@@ -11,11 +11,12 @@ import (
 	"strings"
 	"time"
 
+	"alterway/sshportal/pkg/crypto"
+	"alterway/sshportal/pkg/dbmodels"
+
 	gormigrate "github.com/go-gormigrate/gormigrate/v2"
 	gossh "golang.org/x/crypto/ssh"
 	"gorm.io/gorm"
-	"moul.io/sshportal/pkg/crypto"
-	"moul.io/sshportal/pkg/dbmodels"
 )
 
 func DBInit(db *gorm.DB, aesKey string) error {

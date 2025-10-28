@@ -3,7 +3,7 @@
 
 # sshportal
 
-[![Go Report Card](https://goreportcard.com/badge/moul.io/sshportal)](https://goreportcard.com/report/moul.io/sshportal)
+[![Go Report Card](https://goreportcard.com/badge/alterway/sshportal)](https://goreportcard.com/report/alterway/sshportal)
 [![License](https://img.shields.io/github/license/alterway/sshportal.svg)](https://github.com/alterway/sshportal/blob/master/LICENSE)
 [![GitHub release](https://img.shields.io/github/v/release/alterway/sshportal.svg)](https://github.com/alterway/sshportal/releases)
 

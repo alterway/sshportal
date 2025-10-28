@@ -1,4 +1,4 @@
-package bastion // import "moul.io/sshportal/pkg/bastion"
+package bastion // import "alterway/sshportal/pkg/bastion"
 
 import (
 	"bytes"
@@ -8,11 +8,12 @@ import (
 	"strings"
 	"time"
 
+	"alterway/sshportal/pkg/crypto"
+	"alterway/sshportal/pkg/dbmodels"
+
 	"github.com/gliderlabs/ssh"
 	gossh "golang.org/x/crypto/ssh"
 	"gorm.io/gorm"
-	"moul.io/sshportal/pkg/crypto"
-	"moul.io/sshportal/pkg/dbmodels"
 )
 
 type sshportalContextKey string
