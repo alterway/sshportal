@@ -5,19 +5,39 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"net"
 	"strings"
 	"time"
 
 	"github.com/urfave/cli/v3"
 	gossh "golang.org/x/crypto/ssh"
+	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
-// perform a healthcheck test without requiring an ssh client or an ssh key (used for Docker's HEALTHCHECK)
-func healthcheck(addr string, wait, quiet bool) error {
+// performs a healthcheck test without requiring an ssh client or an ssh key
+// This is used for the Docker HEALTHCHECK
+func healthcheck(c *serverConfig, addr string, wait, quiet bool) error {
+	var hostKey string
+
+	db, err := dbConnect(c, &gorm.Config{
+		Logger: logger.Default.LogMode(logger.Silent),
+	})
+	if err != nil {
+		return fmt.Errorf("healthcheck: can't connect to DB: %v", err)
+	}
+
+	if err := db.Table("ssh_keys").Where("name = ?", "host").Select("pub_key").Find(&hostKey).Error; err != nil {
+		return fmt.Errorf("healthcheck: %v", err)
+	}
+
+	pubKey, _, _, _, err := gossh.ParseAuthorizedKey([]byte(hostKey)) //nolint:dogsled
+	if err != nil {
+		return fmt.Errorf("healthcheck: %v", err)
+	}
+
 	cfg := gossh.ClientConfig{
 		User:            "healthcheck",
-		HostKeyCallback: func(hostname string, remote net.Addr, key gossh.PublicKey) error { return nil },
+		HostKeyCallback: gossh.FixedHostKey(pubKey),
 		Auth:            []gossh.AuthMethod{gossh.Password("healthcheck")},
 	}
 
@@ -25,7 +45,7 @@ func healthcheck(addr string, wait, quiet bool) error {
 		for {
 			if err := healthcheckOnce(addr, cfg, quiet); err != nil {
 				if !quiet {
-					log.Printf("error: %v", err)
+					log.Printf("healthcheck: %v", err)
 				}
 				time.Sleep(time.Second)
 				continue

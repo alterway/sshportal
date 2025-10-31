@@ -87,13 +87,29 @@ func main() {
 		{
 			Name: "healthcheck",
 			Action: func(c context.Context, cmd *cli.Command) error {
-				return healthcheck(cmd.String("addr"), cmd.Bool("wait"), cmd.Bool("quiet"))
+				cfg, err := parseServerConfig(cmd)
+				if err != nil {
+					return err
+				}
+				return healthcheck(cfg, cmd.String("addr"), cmd.Bool("wait"), cmd.Bool("quiet"))
 			},
 			Flags: []cli.Flag{
 				&cli.StringFlag{
 					Name:  "addr, a",
 					Value: "localhost:2222",
 					Usage: "sshportal server address",
+				},
+				&cli.StringFlag{
+					Name:    "db-driver",
+					Sources: cli.EnvVars("SSHPORTAL_DB_DRIVER"),
+					Value:   "sqlite3",
+					Usage:   "GORM driver (sqlite3)",
+				},
+				&cli.StringFlag{
+					Name:    "db-conn",
+					Sources: cli.EnvVars("SSHPORTAL_DATABASE_URL"),
+					Value:   "./sshportal.db",
+					Usage:   "GORM connection string",
 				},
 				&cli.BoolFlag{
 					Name:  "wait, w",
