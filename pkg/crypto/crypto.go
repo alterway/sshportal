@@ -59,8 +59,8 @@ func NewSSHKey(keyType string, length uint) (*dbmodels.SSHKey, error) {
 }
 
 func NewRSAKey(length uint) (*pem.Block, gossh.PublicKey, error) {
-	if length < 1024 || length > 16384 {
-		return nil, nil, fmt.Errorf("key length not supported: %d, supported values are between 1024 and 16384", length)
+	if length < 2048 || length > 16384 {
+		return nil, nil, fmt.Errorf("key length not supported: %d, supported values are between 2048 and 16384", length)
 	}
 	privateKey, err := rsa.GenerateKey(rand.Reader, int(length))
 	if err != nil {
