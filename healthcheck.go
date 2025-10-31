@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"log"
 	"net"
 	"strings"
@@ -53,8 +54,9 @@ func healthcheckOnce(addr string, config gossh.ClientConfig, quiet bool) error {
 		return err
 	}
 	defer func() {
+		// https://github.com/golang/go/issues/38115
 		if err := session.Close(); err != nil {
-			if !quiet {
+			if !quiet && err != io.EOF {
 				log.Printf("failed to close session: %v", err)
 			}
 		}
