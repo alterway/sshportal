@@ -13,7 +13,7 @@ require (
 	github.com/reiver/go-telnet v0.0.0-20250617105250-7da9ad70a2b2
 	github.com/urfave/cli/v3 v3.5.0
 	golang.org/x/crypto v0.43.0
-	golang.org/x/tools v0.37.0
+	golang.org/x/tools v0.38.0
 	gorm.io/driver/mysql v1.6.0
 	gorm.io/driver/postgres v1.6.0
 	gorm.io/driver/sqlite v1.6.0
