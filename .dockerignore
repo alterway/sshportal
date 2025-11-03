@@ -1,6 +1,9 @@
-# .git/  # should be kept for git-based versionning
+# Blocklist files/folders in same directory as the .gitignore file
+/*
 
-examples/
-.circleci/
-.assets/
-/sshportal
+!Dockerfile
+!go.mod
+!go.sum
+!*.go
+!.git/
+!pkg/

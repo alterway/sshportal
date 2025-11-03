@@ -297,7 +297,7 @@ $ ssh healthcheck@localhost -p 2222
 OK
 ```
 
-the `healtcheck` user can be changed using the `healthcheck-user` option.
+the `healthcheck` user can be changed using the `healthcheck-user` option.
 
 ---
 
