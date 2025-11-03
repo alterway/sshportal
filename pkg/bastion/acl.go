@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"alterway/sshportal/pkg/dbmodels"
+	"github.com/alterway/sshportal/pkg/dbmodels"
 )
 
 // ACLHookTimeout is timeout for external ACL hook execution

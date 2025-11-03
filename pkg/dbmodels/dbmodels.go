@@ -1,4 +1,4 @@
-package dbmodels // import "alterway/sshportal/pkg/dbmodels"
+package dbmodels // import "github.com/alterway/sshportal/pkg/dbmodels"
 
 import (
 	"encoding/json"

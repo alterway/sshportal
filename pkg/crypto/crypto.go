@@ -1,4 +1,4 @@
-package crypto // import "alterway/sshportal/pkg/crypto"
+package crypto // import "github.com/alterway/sshportal/pkg/crypto"
 
 import (
 	"bytes"
@@ -16,7 +16,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"alterway/sshportal/pkg/dbmodels"
+	"github.com/alterway/sshportal/pkg/dbmodels"
 
 	gossh "golang.org/x/crypto/ssh"
 )

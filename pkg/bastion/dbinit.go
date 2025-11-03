@@ -1,4 +1,4 @@
-package bastion // import "alterway/sshportal/pkg/bastion"
+package bastion // import "github.com/alterway/sshportal/pkg/bastion"
 
 import (
 	"crypto/rand"
@@ -11,8 +11,8 @@ import (
 	"strings"
 	"time"
 
-	"alterway/sshportal/pkg/crypto"
-	"alterway/sshportal/pkg/dbmodels"
+	"github.com/alterway/sshportal/pkg/crypto"
+	"github.com/alterway/sshportal/pkg/dbmodels"
 
 	gormigrate "github.com/go-gormigrate/gormigrate/v2"
 	gossh "golang.org/x/crypto/ssh"

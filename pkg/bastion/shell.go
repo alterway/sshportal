@@ -1,4 +1,4 @@
-package bastion // import "alterway/sshportal/pkg/bastion"
+package bastion // import "github.com/alterway/sshportal/pkg/bastion"
 
 import (
 	"bufio"
@@ -13,9 +13,9 @@ import (
 	"strings"
 	"time"
 
-	"alterway/sshportal/pkg/crypto"
-	"alterway/sshportal/pkg/dbmodels"
-	"alterway/sshportal/pkg/utils"
+	"github.com/alterway/sshportal/pkg/crypto"
+	"github.com/alterway/sshportal/pkg/dbmodels"
+	"github.com/alterway/sshportal/pkg/utils"
 
 	shlex "github.com/anmitsu/go-shlex"
 	"github.com/asaskevich/govalidator"

@@ -1,4 +1,4 @@
-package bastion // import "alterway/sshportal/pkg/bastion"
+package bastion // import "github.com/alterway/sshportal/pkg/bastion"
 
 import (
 	"bufio"
@@ -8,7 +8,7 @@ import (
 	"log"
 	"time"
 
-	"alterway/sshportal/pkg/dbmodels"
+	"github.com/alterway/sshportal/pkg/dbmodels"
 
 	"github.com/gliderlabs/ssh"
 	oi "github.com/reiver/go-oi"

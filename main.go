@@ -1,4 +1,4 @@
-package main // import "alterway/sshportal"
+package main // import "github.com/alterway/sshportal"
 
 import (
 	"context"

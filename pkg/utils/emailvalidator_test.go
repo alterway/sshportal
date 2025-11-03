@@ -3,7 +3,7 @@ package utils_test
 import (
 	"testing"
 
-	"alterway/sshportal/pkg/utils"
+	"github.com/alterway/sshportal/pkg/utils"
 )
 
 func TestValidateEmail(t *testing.T) {

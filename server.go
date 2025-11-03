@@ -14,7 +14,7 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 
-	"alterway/sshportal/pkg/bastion"
+	"github.com/alterway/sshportal/pkg/bastion"
 
 	"github.com/gliderlabs/ssh"
 	"github.com/urfave/cli/v3"

@@ -1,4 +1,4 @@
-package crypto // import "alterway/sshportal/pkg/crypto"
+package crypto // import "github.com/alterway/sshportal/pkg/crypto"
 
 import (
 	"encoding/base64"
