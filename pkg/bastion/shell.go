@@ -63,12 +63,6 @@ func shell(s ssh.Session, version, gitSha, gitTag string) error {
 		}
 	}
 
-	cli.CommandHelpTemplate = `COMMANDS:
-{{range .Commands}}{{if not .HideHelp}}   {{join .Names ", "}}{{ "\t"}}{{.Usage}}{{ "\n" }}{{end}}{{end}}{{if .VisibleFlags}}
-GLOBAL OPTIONS:
-   {{range .VisibleFlags}}{{.}}
-   {{end}}{{end}}
-`
 	cli.OsExiter = func(c int) {}
 	cli.HelpFlag = &cli.BoolFlag{
 		Name:   "help, h",
@@ -76,6 +70,8 @@ GLOBAL OPTIONS:
 	}
 
 	app := &cli.Command{
+		Name:        " ", // empty string is overridden with "config" by the library
+		Usage:       "SSH bastion server shell",
 		Writer:      s,
 		HideVersion: true,
 	}
@@ -93,9 +89,8 @@ GLOBAL OPTIONS:
 			Usage: "Manages ACLs",
 			Commands: []*cli.Command{
 				{
-					Name:        "create",
-					Usage:       "Creates a new ACL",
-					Description: "$> acl create -",
+					Name:  "create",
+					Usage: "Creates a new ACL",
 					Flags: []cli.Flag{
 						&cli.StringSliceFlag{Name: "hostgroup", Aliases: []string{"hg"}, Usage: "Assigns `HOSTGROUPS` to the acl"},
 						&cli.StringSliceFlag{Name: "usergroup", Aliases: []string{"ug"}, Usage: "Assigns `USERGROUP` to the acl"},
@@ -411,14 +406,14 @@ GLOBAL OPTIONS:
 			Usage: "Manages global configuration",
 			Commands: []*cli.Command{
 				{
-					Name:  "backup",
-					Usage: "Dumps a backup",
+					Name:        "backup",
+					Usage:       "Export a backup to stdout",
+					Description: "ssh admin@portal config backup > sshportal.bkp",
 					Flags: []cli.Flag{
 						&cli.BoolFlag{Name: "indent", Usage: "uses indented JSON"},
 						&cli.BoolFlag{Name: "decrypt", Usage: "decrypt sensitive data"},
 						&cli.BoolFlag{Name: "ignore-events", Usage: "do not backup events data"},
 					},
-					Description: "ssh admin@portal config backup > sshportal.bkp",
 					Action: func(c context.Context, cmd *cli.Command) error {
 						if err := myself.CheckRoles([]string{"admin"}); err != nil {
 							return err
@@ -487,9 +482,8 @@ GLOBAL OPTIONS:
 						return enc.Encode(config)
 					},
 				}, {
-					Name:        "restore",
-					Usage:       "Restores a backup",
-					Description: "ssh admin@portal config restore < sshportal.bkp",
+					Name:  "restore",
+					Usage: "Restores a backup from stdin",
 					Flags: []cli.Flag{
 						&cli.BoolFlag{Name: "confirm", Usage: "yes, I want to replace everything with this backup!"},
 						&cli.BoolFlag{Name: "decrypt", Usage: "do not encrypt sensitive data"},
@@ -757,10 +751,9 @@ GLOBAL OPTIONS:
 			Usage: "Manages hosts",
 			Commands: []*cli.Command{
 				{
-					Name:        "create",
-					Usage:       "Creates a new host",
-					ArgsUsage:   "[scheme://]<user>[:<password>]@<host>[:<port>]",
-					Description: "$> host create bart@foo.org\n   $> host create bob:marley@example.com:2222",
+					Name:      "create",
+					ArgsUsage: "[scheme://]<user>[:<password>]@<host>[:<port>]",
+					Usage:     "Creates a new host",
 					Flags: []cli.Flag{
 						&cli.StringFlag{Name: "name", Aliases: []string{"n"}, Usage: "Assigns a name to the host"},
 						&cli.StringFlag{Name: "password", Aliases: []string{"p"}, Usage: "If present, sshportal will use password-based authentication"},
@@ -1153,9 +1146,8 @@ GLOBAL OPTIONS:
 			Usage: "Manages host groups",
 			Commands: []*cli.Command{
 				{
-					Name:        "create",
-					Usage:       "Creates a new host group",
-					Description: "$> hostgroup create --name=prod",
+					Name:  "create",
+					Usage: "Creates a new host group",
 					Flags: []cli.Flag{
 						&cli.StringFlag{Name: "name", Usage: "Assigns a name to the host group"},
 						&cli.StringFlag{Name: "comment", Usage: "Adds a comment"},
@@ -1365,9 +1357,8 @@ GLOBAL OPTIONS:
 			Usage: "Manages keys",
 			Commands: []*cli.Command{
 				{
-					Name:        "create",
-					Usage:       "Creates a new key",
-					Description: "$> key create\n   $> key create --name=mykey",
+					Name:  "create",
+					Usage: "Creates a new key",
 					Flags: []cli.Flag{
 						&cli.StringFlag{Name: "name", Usage: "Assigns a name to the key"},
 						&cli.StringFlag{Name: "type", Value: "ed25519"},
@@ -1423,9 +1414,8 @@ GLOBAL OPTIONS:
 						return nil
 					},
 				}, {
-					Name:        "import",
-					Usage:       "Imports an existing private key",
-					Description: "$> key import\n   $> key import --name=mykey --type=rsa",
+					Name:  "import",
+					Usage: "Imports an existing private key",
 					Flags: []cli.Flag{
 						&cli.StringFlag{Name: "name", Usage: "Assigns a name to the key"},
 						&cli.StringFlag{Name: "type", Value: "ed25519", Usage: "Key type (rsa, ed25519)"},
@@ -1729,10 +1719,9 @@ GLOBAL OPTIONS:
 						return enc.Encode(users)
 					},
 				}, {
-					Name:        "invite",
-					ArgsUsage:   "<email>",
-					Usage:       "Invites a new user",
-					Description: "$> user invite bob@example.com\n   $> user invite --name=Robert bob@example.com",
+					Name:      "invite",
+					ArgsUsage: "<email>",
+					Usage:     "Invites a new user",
 					Flags: []cli.Flag{
 						&cli.StringFlag{Name: "name", Usage: "Assigns a name to the user"},
 						&cli.StringFlag{Name: "comment", Usage: "Adds a comment"},
@@ -2011,9 +2000,8 @@ GLOBAL OPTIONS:
 			Usage: "Manages user groups",
 			Commands: []*cli.Command{
 				{
-					Name:        "create",
-					Usage:       "Creates a new user group",
-					Description: "$> usergroup create --name=prod",
+					Name:  "create",
+					Usage: "Creates a new user group",
 					Flags: []cli.Flag{
 						&cli.StringFlag{Name: "name", Usage: "Assigns a name to the user group"},
 						&cli.StringFlag{Name: "comment", Usage: "Adds a comment"},
@@ -2190,10 +2178,9 @@ GLOBAL OPTIONS:
 			Usage: "Manages userkeys",
 			Commands: []*cli.Command{
 				{
-					Name:        "create",
-					ArgsUsage:   "<user ID or email>",
-					Usage:       "Creates a new userkey for an existing user",
-					Description: "$> userkey create bob",
+					Name:      "create",
+					ArgsUsage: "<user ID or email>",
+					Usage:     "Creates a new userkey for an existing user",
 					Flags: []cli.Flag{
 						&cli.StringFlag{Name: "comment", Usage: "Adds a comment"},
 					},

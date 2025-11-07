@@ -1,11 +1,12 @@
 package bastion // import "github.com/alterway/sshportal/pkg/bastion"
 
 import (
-	"github.com/alterway/sshportal/pkg/dbmodels"
 	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/alterway/sshportal/pkg/dbmodels"
 
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
