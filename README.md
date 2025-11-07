@@ -2,18 +2,16 @@
 <img src="https://raw.githubusercontent.com/alterway/sshportal/master/.assets/bastion.jpg" width="20%">
 
 # sshportal
-
+[![GoDoc](https://godoc.org/github.com/alterway/sshportal?status.svg)](https://godoc.org/github.com/alterway/sshportal)
 [![Go Report Card](https://goreportcard.com/badge/alterway/sshportal)](https://goreportcard.com/report/alterway/sshportal)
 [![License](https://img.shields.io/github/license/alterway/sshportal.svg)](https://github.com/alterway/sshportal/blob/master/LICENSE)
 [![GitHub release](https://img.shields.io/github/v/release/alterway/sshportal.svg)](https://github.com/alterway/sshportal/releases)
 
 Jump host/Jump server without the jump, a.k.a Transparent SSH bastion
-
-
-## IMPORTANT NOTE
-**The [original project](https://github.com/moul/sshportal) is no longer being maintained. This fork includes important security fixes, some bugfixes and features but it is on MAINTENANCE mode and only security issues and major bugs will be fixed. You should consider using [Teleport](https://github.com/gravitational/teleport) instead.**
-
 </div>
+
+> [!IMPORTANT]
+>**The [original project](https://github.com/moul/sshportal) is no longer being maintained. This fork includes important security fixes, some bugfixes and features but it is on MAINTENANCE mode and only security issues and major bugs will be fixed. You should consider using [Teleport](https://github.com/gravitational/teleport) or [Warpgate](https://github.com/warp-tech/warpgate) instead.**
 
 ---
 
@@ -30,7 +28,6 @@ Jump host/Jump server without the jump, a.k.a Transparent SSH bastion
 - [Built-in shell](#built-in-shell)
 - [Healthcheck](#healthcheck)
 - [Portal alias (.ssh/config)](#portal-alias-sshconfig)
-- [Under the hood](#under-the-hood)
 - [Testing](#testing)
 
 <!-- tocstop -->
@@ -127,7 +124,7 @@ ssh localhost -p 2222 -l invite:xxxxxxx
 
 Welcome sshportal!
 
-Your key is now associated with the user "sshportal@localhost".
+Your key is now associated with the user `sshportal@localhost`.
 ```
 
 3) Your first user is the admin. To access to the console, connect like a normal server
@@ -198,10 +195,10 @@ Demo gif:
 
 ### Features and limitations
 
-* Single autonomous binary (~20Mb) with no runtime dependencies (except glibc)
+* Single autonomous portable binary (~25Mb) with zero runtime dependency (fully static with musl)
 * Portable / Cross-platform (regularly tested on linux and OSX/darwin)
-* Store data in [Sqlite3](https://www.sqlite.org/) or [MySQL](https://www.mysql.com)
-* Stateless -> horizontally scalable when using [MySQL](https://www.mysql.com) as the backend
+* Store data in Sqlite, Mariadb or PostgreSQL
+* Stateless -> horizontally scalable when using Mariadb or PostgreSQL as the backend
 * Connect to remote host using key or password
 * Admin commands can be run directly or in an interactive shell
 * Host management
@@ -213,7 +210,7 @@ Demo gif:
 * User roles (admin, trusted, standard, ...)
 * User invitations (no more "give me your public ssh key please")
 * Easy server installation (generate shell command to setup `authorized_keys`)
-* Sensitive data encryption
+* Sensitive data encryption in DB (Passwords & private keys)
 * Session management (see active connections, history, stats, stop)
 * Audit log (logging every user action)
 * Record TTY Session (with [ttyrec](https://en.wikipedia.org/wiki/Ttyrec) format, use `ttyplay` for replay)
@@ -303,7 +300,7 @@ the `healthcheck` user can be changed using the `healthcheck-user` option.
 
 Alternatively, you can run the built-in healthcheck helper (requiring no ssh client nor ssh key):
 
-Usage: `sshportal healthcheck [--addr=host:port] [--wait] [--quiet]`
+Usage: `sshportal healthcheck [--addr=host:port] [--wait] [--quiet] [--db-driver] [--db-conn]`
 
 ```console
 $ sshportal healthcheck --addr=localhost:2222; echo $?
@@ -353,31 +350,9 @@ ssh localhost -p 2222 -l hostname
 
 By default, `sshportal` uses a local [sqlite](https://www.sqlite.org/) database which isn't scalable by design.
 
-You can run multiple instances of `sshportal` sharing the same [MySQL](https://www.mysql.com) database, using `sshportal --db-conn=user:pass@host/dbname?parseTime=true --db-driver=mysql`.
+You can run multiple instances of `sshportal` sharing the same MySQL database, using `sshportal --db-conn=user:pass@host/dbname?parseTime=true --db-driver=mysql`.
 
 ![sshportal cluster with MySQL backend](https://raw.github.com/alterway/sshportal/master/.assets/cluster-mysql.png)
-
-See [examples/mysql](http://github.com/alterway/sshportal/tree/master/examples/mysql).
-
----
-
-### Under the hood
-
-* Docker first (used in dev, tests, by the CI and in production)
-* Backed by (see [dep graph](https://godoc.org/github.com/alterway/sshportal?import-graph&hide=2)):
-  * SSH
-    * https://github.com/gliderlabs/ssh: SSH server made easy (well-designed golang library to build SSH servers)
-    * https://godoc.org/golang.org/x/crypto/ssh: both client and server SSH protocol and helpers
-  * Database
-    * https://github.com/jinzhu/gorm/: SQL orm
-    * https://github.com/go-gormigrate/gormigrate: Database migration system
-  * Built-in shell
-    * https://github.com/olekukonko/tablewriter: Ascii tables
-    * https://github.com/asaskevich/govalidator: Valide user inputs
-    * https://github.com/dustin/go-humanize: Human-friendly representation of technical data (time ago, bytes, ...)
-    * https://github.com/urfave/cli: CLI flag parsing with subcommands support
-
-![sshportal data model](https://raw.github.com/alterway/sshportal/master/.assets/sql-schema.png)
 
 ---
 
@@ -395,6 +370,6 @@ cd ./examples/integration && make
 
 Perform unit tests
 ```
-go test
+go test ./...
 ```
 ---
