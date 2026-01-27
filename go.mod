@@ -12,8 +12,8 @@ require (
 	github.com/reiver/go-oi v1.0.0
 	github.com/reiver/go-telnet v0.0.0-20250617105250-7da9ad70a2b2
 	github.com/urfave/cli/v3 v3.6.1
-	golang.org/x/crypto v0.45.0
-	golang.org/x/tools v0.39.0
+	golang.org/x/crypto v0.46.0
+	golang.org/x/tools v0.40.0
 	gorm.io/driver/mysql v1.6.0
 	gorm.io/driver/postgres v1.6.0
 	gorm.io/driver/sqlite v1.6.0
@@ -40,10 +40,10 @@ require (
 	github.com/olekukonko/cat v0.0.0-20250911104152-50322a0618f6 // indirect
 	github.com/olekukonko/errors v1.1.0 // indirect
 	github.com/olekukonko/ll v0.1.3 // indirect
-	golang.org/x/sync v0.18.0 // indirect
-	golang.org/x/sys v0.38.0 // indirect
-	golang.org/x/term v0.37.0 // indirect
-	golang.org/x/text v0.31.0 // indirect
+	golang.org/x/sync v0.19.0 // indirect
+	golang.org/x/sys v0.39.0 // indirect
+	golang.org/x/term v0.38.0 // indirect
+	golang.org/x/text v0.32.0 // indirect
 )
 
 go 1.24.0
