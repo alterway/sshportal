@@ -1390,14 +1390,16 @@ func shell(s ssh.Session, version, gitSha, gitTag string) error {
 						}
 
 						key, err := crypto.NewSSHKey(cmd.String("type"), length)
+						if err != nil {
+							return err
+						}
+
 						if actx.aesKey != "" {
 							if err := crypto.EncryptField(actx.aesKey, &key.PrivKey); err != nil {
 								return err
 							}
 						}
-						if err != nil {
-							return err
-						}
+
 						key.Name = name
 						key.Comment = cmd.String("comment")
 
