@@ -3,16 +3,20 @@ version: 2
 updates:
 
 - package-ecosystem: docker
+  cooldown:
+    default-days: 3
   directory: "/"
   schedule:
-    interval: monthly
-    time: "02:00"
+    interval: "cron"
+    cronjob: "0 1 1,16 * *"
 
 - package-ecosystem: github-actions
+  cooldown:
+    default-days: 3
   directory: "/"
   schedule:
-    interval: monthly
-    time: "02:00"
+    interval: "cron"
+    cronjob: "0 1 1,16 * *"
   commit-message:
     prefix: "chore(deps)"
   groups:
@@ -21,10 +25,12 @@ updates:
         - "*"
 
 - package-ecosystem: gomod
+  cooldown:
+    default-days: 3
   directory: "/"
   schedule:
-    interval: monthly
-    time: "02:00"
+    interval: "cron"
+    cronjob: "0 1 1,16 * *"
   commit-message:
     prefix: "chore(deps)"
   groups:
