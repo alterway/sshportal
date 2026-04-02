@@ -11,7 +11,7 @@ jobs:
   auto-release:
     permissions:
       contents: write
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     outputs:
       do_release: ${{ steps.release.outputs.RELEASE }}
     steps:
@@ -32,7 +32,7 @@ jobs:
   goreleaser:
     needs: auto-release
     if: needs.auto-release.outputs.do_release == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     permissions:
       contents: write
     steps:
