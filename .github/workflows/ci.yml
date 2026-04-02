@@ -7,12 +7,16 @@ on:
       - "go.sum"
       - "go.mod"
       - "Dockerfile"
+      - ".github/workflows/**"
+      - ".golangci.yml"
   pull_request:
     paths:
       - "**.go"
       - "go.sum"
       - "go.mod"
       - "Dockerfile"
+      - ".github/workflows/**"
+      - ".golangci.yml"
 
 permissions:
   contents: read
