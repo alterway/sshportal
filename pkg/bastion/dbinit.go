@@ -19,6 +19,12 @@ import (
 	"gorm.io/gorm"
 )
 
+const (
+	UserAdmin      = "admin"
+	UserDefault    = "default"
+	CommentDefault = "created by sshportal"
+)
+
 func DBInit(db *gorm.DB, aesKey string) error {
 	log.SetOutput(io.Discard)
 	log.SetOutput(os.Stderr)
@@ -258,16 +264,16 @@ func DBInit(db *gorm.DB, aesKey string) error {
 		}, {
 			ID: "17",
 			Migrate: func(tx *gorm.DB) error {
-				return tx.Create(&dbmodels.UserRole{Name: "admin"}).Error
+				return tx.Create(&dbmodels.UserRole{Name: UserAdmin}).Error
 			},
 			Rollback: func(tx *gorm.DB) error {
-				return tx.Where("name = ?", "admin").Unscoped().Delete(&dbmodels.UserRole{}).Error
+				return tx.Where("name = ?", UserAdmin).Unscoped().Delete(&dbmodels.UserRole{}).Error
 			},
 		}, {
 			ID: "18",
 			Migrate: func(tx *gorm.DB) error {
 				var adminRole dbmodels.UserRole
-				if err := db.Where("name = ?", "admin").First(&adminRole).Error; err != nil {
+				if err := db.Where("name = ?", UserAdmin).First(&adminRole).Error; err != nil {
 					return err
 				}
 
@@ -546,7 +552,7 @@ func DBInit(db *gorm.DB, aesKey string) error {
 
 	// create default ssh key
 	var count int64
-	if err := db.Table("ssh_keys").Where("name = ?", "default").Count(&count).Error; err != nil {
+	if err := db.Table("ssh_keys").Where("name = ?", UserDefault).Count(&count).Error; err != nil {
 		return err
 	}
 	if count == 0 {
@@ -554,8 +560,8 @@ func DBInit(db *gorm.DB, aesKey string) error {
 		if err != nil {
 			return err
 		}
-		key.Name = "default"
-		key.Comment = "created by sshportal"
+		key.Name = UserDefault
+		key.Comment = CommentDefault
 
 		if aesKey != "" {
 			if err := crypto.EncryptField(aesKey, &key.PrivKey); err != nil {
@@ -569,13 +575,13 @@ func DBInit(db *gorm.DB, aesKey string) error {
 	}
 
 	// create default host group
-	if err := db.Table("host_groups").Where("name = ?", "default").Count(&count).Error; err != nil {
+	if err := db.Table("host_groups").Where("name = ?", UserDefault).Count(&count).Error; err != nil {
 		return err
 	}
 	if count == 0 {
 		hostGroup := dbmodels.HostGroup{
-			Name:    "default",
-			Comment: "created by sshportal",
+			Name:    UserDefault,
+			Comment: CommentDefault,
 		}
 		if err := db.Create(&hostGroup).Error; err != nil {
 			return err
@@ -583,13 +589,13 @@ func DBInit(db *gorm.DB, aesKey string) error {
 	}
 
 	// create default user group
-	if err := db.Table("user_groups").Where("name = ?", "default").Count(&count).Error; err != nil {
+	if err := db.Table("user_groups").Where("name = ?", UserDefault).Count(&count).Error; err != nil {
 		return err
 	}
 	if count == 0 {
 		userGroup := dbmodels.UserGroup{
-			Name:    "default",
-			Comment: "created by sshportal",
+			Name:    UserDefault,
+			Comment: CommentDefault,
 		}
 		if err := db.Create(&userGroup).Error; err != nil {
 			return err
@@ -620,7 +626,7 @@ func DBInit(db *gorm.DB, aesKey string) error {
 
 	// create admin user
 	var defaultUserGroup dbmodels.UserGroup
-	db.Where("name = ?", "default").First(&defaultUserGroup)
+	db.Where("name = ?", UserDefault).First(&defaultUserGroup)
 	if err := db.Table("users").Count(&count).Error; err != nil {
 		return err
 	}
@@ -634,7 +640,7 @@ func DBInit(db *gorm.DB, aesKey string) error {
 			inviteToken = os.Getenv("SSHPORTAL_DEFAULT_ADMIN_INVITE_TOKEN")
 		}
 		var adminRole dbmodels.UserRole
-		if err := db.Where("name = ?", "admin").First(&adminRole).Error; err != nil {
+		if err := db.Where("name = ?", UserAdmin).First(&adminRole).Error; err != nil {
 			return err
 		}
 		var username string
@@ -651,7 +657,7 @@ func DBInit(db *gorm.DB, aesKey string) error {
 		user := dbmodels.User{
 			Name:        username,
 			Email:       fmt.Sprintf("%s@localhost", username),
-			Comment:     "created by sshportal",
+			Comment:     CommentDefault,
 			Roles:       []*dbmodels.UserRole{&adminRole},
 			InviteToken: inviteToken,
 			Groups:      []*dbmodels.UserGroup{&defaultUserGroup},
@@ -680,7 +686,7 @@ func DBInit(db *gorm.DB, aesKey string) error {
 			return err
 		}
 		key.Name = "host"
-		key.Comment = "created by sshportal"
+		key.Comment = CommentDefault
 
 		if aesKey != "" {
 			if err := crypto.EncryptField(aesKey, &key.PrivKey); err != nil {

@@ -52,6 +52,16 @@ const (
 	FgMag   = "\033[35m"
 )
 
+const (
+	FlagCommentName  = "comment"
+	FlagCommentUsage = "Adds a comment"
+	FlagLatestName   = "latest"
+	FlagQuietUsage   = "Only display IDs"
+	FlagQuietName    = "quiet"
+	FlagInspectName  = "inspect"
+	UserAdminName    = "admin"
+)
+
 func shell(s ssh.Session, version, gitSha, gitTag string) error {
 	var (
 		sshCommand = s.Command()
@@ -95,14 +105,14 @@ func shell(s ssh.Session, version, gitSha, gitTag string) error {
 						&cli.StringSliceFlag{Name: "hostgroup", Aliases: []string{"hg"}, Usage: "Assigns `HOSTGROUPS` to the acl"},
 						&cli.StringSliceFlag{Name: "usergroup", Aliases: []string{"ug"}, Usage: "Assigns `USERGROUP` to the acl"},
 						&cli.StringFlag{Name: "pattern", Usage: "Assigns a host pattern to the acl"},
-						&cli.StringFlag{Name: "comment", Usage: "Adds a comment"},
+						&cli.StringFlag{Name: FlagCommentName, Usage: FlagCommentUsage},
 						&cli.StringFlag{Name: "action", Usage: "Assigns the ACL action (allow,deny)", Value: string(dbmodels.ACLActionAllow)},
 						&cli.UintFlag{Name: "weight", Aliases: []string{"w"}, Usage: "Assigns the ACL weight (priority)"},
 						&cli.StringFlag{Name: "inception", Aliases: []string{"i"}, Usage: "Assigns inception date-time"},
 						&cli.StringFlag{Name: "expiration", Aliases: []string{"e"}, Usage: "Assigns expiration date-time"},
 					},
 					Action: func(c context.Context, cmd *cli.Command) error {
-						if err := myself.CheckRoles([]string{"admin"}); err != nil {
+						if err := myself.CheckRoles([]string{UserAdminName}); err != nil {
 							return err
 						}
 
@@ -116,7 +126,7 @@ func shell(s ssh.Session, version, gitSha, gitTag string) error {
 						}
 
 						acl := dbmodels.ACL{
-							Comment:     cmd.String("comment"),
+							Comment:     cmd.String(FlagCommentName),
 							HostPattern: cmd.String("pattern"),
 							UserGroups:  []*dbmodels.UserGroup{},
 							HostGroups:  []*dbmodels.HostGroup{},
@@ -157,14 +167,14 @@ func shell(s ssh.Session, version, gitSha, gitTag string) error {
 						return nil
 					},
 				}, {
-					Name:      "inspect",
+					Name:      FlagInspectName,
 					Usage:     "Shows detailed information on one or more ACLs",
 					ArgsUsage: "ACL...",
 					Action: func(c context.Context, cmd *cli.Command) error {
 						if cmd.NArg() < 1 {
 							return cli.ShowSubcommandHelp(cmd)
 						}
-						if err := myself.CheckRoles([]string{"admin"}); err != nil {
+						if err := myself.CheckRoles([]string{UserAdminName}); err != nil {
 							return err
 						}
 
@@ -181,17 +191,17 @@ func shell(s ssh.Session, version, gitSha, gitTag string) error {
 					Name:  "ls",
 					Usage: "Lists ACLs",
 					Flags: []cli.Flag{
-						&cli.BoolFlag{Name: "latest", Aliases: []string{"l"}, Usage: "Show the latest ACL"},
-						&cli.BoolFlag{Name: "quiet", Aliases: []string{"q"}, Usage: "Only display IDs"},
+						&cli.BoolFlag{Name: FlagLatestName, Aliases: []string{"l"}, Usage: "Show the latest ACL"},
+						&cli.BoolFlag{Name: FlagQuietName, Aliases: []string{"q"}, Usage: FlagQuietUsage},
 					},
 					Action: func(c context.Context, cmd *cli.Command) error {
-						if err := myself.CheckRoles([]string{"admin"}); err != nil {
+						if err := myself.CheckRoles([]string{UserAdminName}); err != nil {
 							return err
 						}
 
 						var acls []*dbmodels.ACL
 						query := db.Order("created_at desc").Preload("UserGroups").Preload("HostGroups")
-						if cmd.Bool("latest") {
+						if cmd.Bool(FlagLatestName) {
 							var acl dbmodels.ACL
 							if err := query.First(&acl).Error; err != nil {
 								return err
@@ -200,7 +210,7 @@ func shell(s ssh.Session, version, gitSha, gitTag string) error {
 						} else if err := query.Find(&acls).Error; err != nil {
 							return err
 						}
-						if cmd.Bool("quiet") {
+						if cmd.Bool(FlagQuietName) {
 							for _, acl := range acls {
 								fmt.Fprintln(s, acl.ID)
 							}
@@ -278,7 +288,7 @@ func shell(s ssh.Session, version, gitSha, gitTag string) error {
 						if cmd.NArg() < 1 {
 							return cli.ShowSubcommandHelp(cmd)
 						}
-						if err := myself.CheckRoles([]string{"admin"}); err != nil {
+						if err := myself.CheckRoles([]string{UserAdminName}); err != nil {
 							return err
 						}
 
@@ -296,7 +306,7 @@ func shell(s ssh.Session, version, gitSha, gitTag string) error {
 						&cli.BoolFlag{Name: "unset-inception", Usage: "Unset inception date-time"},
 						&cli.BoolFlag{Name: "unset-expiration", Usage: "Unset expiration date-time"},
 						&cli.StringFlag{Name: "expiration", Aliases: []string{"e"}, Usage: "Update expiration date-time"},
-						&cli.StringFlag{Name: "comment", Aliases: []string{"c"}, Usage: "Update comment"},
+						&cli.StringFlag{Name: FlagCommentName, Aliases: []string{"c"}, Usage: "Update comment"},
 						&cli.StringSliceFlag{Name: "assign-usergroup", Aliases: []string{"ug"}, Usage: "Assign the ACL to new `USERGROUPS`"},
 						&cli.StringSliceFlag{Name: "unassign-usergroup", Aliases: []string{"uug"}, Usage: "Unassign the ACL from `USERGROUPS`"},
 						&cli.StringSliceFlag{Name: "assign-hostgroup", Aliases: []string{"hg"}, Usage: "Assign the ACL to new `HOSTGROUPS`"},
@@ -306,7 +316,7 @@ func shell(s ssh.Session, version, gitSha, gitTag string) error {
 						if cmd.NArg() < 1 {
 							return cli.ShowSubcommandHelp(cmd)
 						}
-						if err := myself.CheckRoles([]string{"admin"}); err != nil {
+						if err := myself.CheckRoles([]string{UserAdminName}); err != nil {
 							return err
 						}
 
@@ -333,7 +343,7 @@ func shell(s ssh.Session, version, gitSha, gitTag string) error {
 								Weight:      cmd.Uint("weight"),
 								Inception:   inception,
 								Expiration:  expiration,
-								Comment:     cmd.String("comment"),
+								Comment:     cmd.String(FlagCommentName),
 							}
 							if err := model.Updates(update).Error; err != nil {
 								tx.Rollback()
@@ -415,7 +425,7 @@ func shell(s ssh.Session, version, gitSha, gitTag string) error {
 						&cli.BoolFlag{Name: "ignore-events", Usage: "do not backup events data"},
 					},
 					Action: func(c context.Context, cmd *cli.Command) error {
-						if err := myself.CheckRoles([]string{"admin"}); err != nil {
+						if err := myself.CheckRoles([]string{UserAdminName}); err != nil {
 							return err
 						}
 
@@ -489,7 +499,7 @@ func shell(s ssh.Session, version, gitSha, gitTag string) error {
 						&cli.BoolFlag{Name: "decrypt", Usage: "do not encrypt sensitive data"},
 					},
 					Action: func(c context.Context, cmd *cli.Command) error {
-						if err := myself.CheckRoles([]string{"admin"}); err != nil {
+						if err := myself.CheckRoles([]string{UserAdminName}); err != nil {
 							return err
 						}
 
@@ -650,7 +660,7 @@ func shell(s ssh.Session, version, gitSha, gitTag string) error {
 			Usage: "Manages events",
 			Commands: []*cli.Command{
 				{
-					Name:      "inspect",
+					Name:      FlagInspectName,
 					Usage:     "Shows detailed information on one or more events",
 					ArgsUsage: "EVENT...",
 					Action: func(c context.Context, cmd *cli.Command) error {
@@ -658,7 +668,7 @@ func shell(s ssh.Session, version, gitSha, gitTag string) error {
 							return cli.ShowSubcommandHelp(cmd)
 						}
 
-						if err := myself.CheckRoles([]string{"admin"}); err != nil {
+						if err := myself.CheckRoles([]string{UserAdminName}); err != nil {
 							return err
 						}
 
@@ -683,17 +693,17 @@ func shell(s ssh.Session, version, gitSha, gitTag string) error {
 					Name:  "ls",
 					Usage: "Lists events",
 					Flags: []cli.Flag{
-						&cli.BoolFlag{Name: "latest", Aliases: []string{"l"}, Usage: "Show the latest event"},
-						&cli.BoolFlag{Name: "quiet", Aliases: []string{"q"}, Usage: "Only display IDs"},
+						&cli.BoolFlag{Name: FlagLatestName, Aliases: []string{"l"}, Usage: "Show the latest event"},
+						&cli.BoolFlag{Name: FlagQuietName, Aliases: []string{"q"}, Usage: FlagQuietUsage},
 					},
 					Action: func(c context.Context, cmd *cli.Command) error {
-						if err := myself.CheckRoles([]string{"admin"}); err != nil {
+						if err := myself.CheckRoles([]string{UserAdminName}); err != nil {
 							return err
 						}
 
 						var events []dbmodels.Event
 						query := db.Order("created_at desc").Preload("Author")
-						if cmd.Bool("latest") {
+						if cmd.Bool(FlagLatestName) {
 							var event dbmodels.Event
 							if err := query.First(&event).Error; err != nil {
 								return err
@@ -703,7 +713,7 @@ func shell(s ssh.Session, version, gitSha, gitTag string) error {
 							return err
 						}
 
-						if cmd.Bool("quiet") {
+						if cmd.Bool(FlagQuietName) {
 							for _, event := range events {
 								fmt.Fprintln(s, event.ID)
 							}
@@ -757,7 +767,7 @@ func shell(s ssh.Session, version, gitSha, gitTag string) error {
 					Flags: []cli.Flag{
 						&cli.StringFlag{Name: "name", Aliases: []string{"n"}, Usage: "Assigns a name to the host"},
 						&cli.StringFlag{Name: "password", Aliases: []string{"p"}, Usage: "If present, sshportal will use password-based authentication"},
-						&cli.StringFlag{Name: "comment", Aliases: []string{"c"}},
+						&cli.StringFlag{Name: FlagCommentName, Aliases: []string{"c"}},
 						&cli.StringFlag{Name: "key", Aliases: []string{"k"}, Usage: "`KEY` to use for authentication"},
 						&cli.StringFlag{Name: "hop", Aliases: []string{"o"}, Usage: "Hop to use for connecting to the server"},
 						&cli.StringFlag{Name: "logging", Aliases: []string{"l"}, Usage: "Logging mode (disabled, input, everything)"},
@@ -768,7 +778,7 @@ func shell(s ssh.Session, version, gitSha, gitTag string) error {
 							return cli.ShowSubcommandHelp(cmd)
 						}
 
-						if err := myself.CheckRoles([]string{"admin"}); err != nil {
+						if err := myself.CheckRoles([]string{UserAdminName}); err != nil {
 							return err
 						}
 
@@ -778,7 +788,7 @@ func shell(s ssh.Session, version, gitSha, gitTag string) error {
 						}
 						host := &dbmodels.Host{
 							URL:     u.String(),
-							Comment: cmd.String("comment"),
+							Comment: cmd.String(FlagCommentName),
 						}
 						if cmd.String("password") != "" {
 							host.Password = cmd.String("password")
@@ -847,7 +857,7 @@ func shell(s ssh.Session, version, gitSha, gitTag string) error {
 						return nil
 					},
 				}, {
-					Name:      "inspect",
+					Name:      FlagInspectName,
 					Usage:     "Shows detailed information on one or more hosts",
 					ArgsUsage: "HOST...",
 					Flags: []cli.Flag{
@@ -889,8 +899,8 @@ func shell(s ssh.Session, version, gitSha, gitTag string) error {
 					Name:  "ls",
 					Usage: "Lists hosts",
 					Flags: []cli.Flag{
-						&cli.BoolFlag{Name: "latest", Aliases: []string{"l"}, Usage: "Show the latest host"},
-						&cli.BoolFlag{Name: "quiet", Aliases: []string{"q"}, Usage: "Only display IDs"},
+						&cli.BoolFlag{Name: FlagLatestName, Aliases: []string{"l"}, Usage: "Show the latest host"},
+						&cli.BoolFlag{Name: FlagQuietName, Aliases: []string{"q"}, Usage: FlagQuietUsage},
 					},
 					Action: func(c context.Context, cmd *cli.Command) error {
 						if err := myself.CheckRoles([]string{"admin", "listhosts"}); err != nil {
@@ -899,7 +909,7 @@ func shell(s ssh.Session, version, gitSha, gitTag string) error {
 
 						var hosts []*dbmodels.Host
 						query := db.Order("created_at desc").Preload("Groups")
-						if cmd.Bool("latest") {
+						if cmd.Bool(FlagLatestName) {
 							var host dbmodels.Host
 							if err := query.First(&host).Error; err != nil {
 								return err
@@ -909,7 +919,7 @@ func shell(s ssh.Session, version, gitSha, gitTag string) error {
 							return err
 						}
 
-						if cmd.Bool("quiet") {
+						if cmd.Bool(FlagQuietName) {
 							for _, host := range hosts {
 								fmt.Fprintln(s, host.ID)
 							}
@@ -991,7 +1001,7 @@ func shell(s ssh.Session, version, gitSha, gitTag string) error {
 							return cli.ShowSubcommandHelp(cmd)
 						}
 
-						if err := myself.CheckRoles([]string{"admin"}); err != nil {
+						if err := myself.CheckRoles([]string{UserAdminName}); err != nil {
 							return err
 						}
 
@@ -1004,7 +1014,7 @@ func shell(s ssh.Session, version, gitSha, gitTag string) error {
 					Flags: []cli.Flag{
 						&cli.StringFlag{Name: "name", Aliases: []string{"n"}, Usage: "Rename the host"},
 						&cli.StringFlag{Name: "url", Aliases: []string{"u"}, Usage: "Update connection URL"},
-						&cli.StringFlag{Name: "comment", Aliases: []string{"c"}, Usage: "Update/set a host comment"},
+						&cli.StringFlag{Name: FlagCommentName, Aliases: []string{"c"}, Usage: "Update/set a host comment"},
 						&cli.StringFlag{Name: "key", Aliases: []string{"k"}, Usage: "Link a `KEY` to use for authentication"},
 						&cli.StringFlag{Name: "hop", Aliases: []string{"o"}, Usage: "Change the hop to use for connecting to the server"},
 						&cli.StringFlag{Name: "logging", Aliases: []string{"l"}, Usage: "Logging mode (disabled, input, everything)"},
@@ -1018,7 +1028,7 @@ func shell(s ssh.Session, version, gitSha, gitTag string) error {
 							return cli.ShowSubcommandHelp(cmd)
 						}
 
-						if err := myself.CheckRoles([]string{"admin"}); err != nil {
+						if err := myself.CheckRoles([]string{UserAdminName}); err != nil {
 							return err
 						}
 
@@ -1036,7 +1046,7 @@ func shell(s ssh.Session, version, gitSha, gitTag string) error {
 							host := host
 							model := tx.Model(&host)
 							// simple fields
-							for _, fieldname := range []string{"name", "comment"} {
+							for _, fieldname := range []string{"name", FlagCommentName} {
 								if cmd.String(fieldname) != "" {
 									if err := model.Update(fieldname, cmd.String(fieldname)).Error; err != nil {
 										tx.Rollback()
@@ -1150,16 +1160,16 @@ func shell(s ssh.Session, version, gitSha, gitTag string) error {
 					Usage: "Creates a new host group",
 					Flags: []cli.Flag{
 						&cli.StringFlag{Name: "name", Usage: "Assigns a name to the host group"},
-						&cli.StringFlag{Name: "comment", Usage: "Adds a comment"},
+						&cli.StringFlag{Name: FlagCommentName, Usage: FlagCommentUsage},
 					},
 					Action: func(c context.Context, cmd *cli.Command) error {
-						if err := myself.CheckRoles([]string{"admin"}); err != nil {
+						if err := myself.CheckRoles([]string{UserAdminName}); err != nil {
 							return err
 						}
 
 						hostGroup := dbmodels.HostGroup{
 							Name:    cmd.String("name"),
-							Comment: cmd.String("comment"),
+							Comment: cmd.String(FlagCommentName),
 						}
 						if hostGroup.Name == "" {
 							hostGroup.Name = namesgenerator.GetRandomName(0)
@@ -1176,7 +1186,7 @@ func shell(s ssh.Session, version, gitSha, gitTag string) error {
 						return nil
 					},
 				}, {
-					Name:      "inspect",
+					Name:      FlagInspectName,
 					Usage:     "Shows detailed information on one or more host groups",
 					ArgsUsage: "HOSTGROUP...",
 					Action: func(c context.Context, cmd *cli.Command) error {
@@ -1184,7 +1194,7 @@ func shell(s ssh.Session, version, gitSha, gitTag string) error {
 							return cli.ShowSubcommandHelp(cmd)
 						}
 
-						if err := myself.CheckRoles([]string{"admin"}); err != nil {
+						if err := myself.CheckRoles([]string{UserAdminName}); err != nil {
 							return err
 						}
 
@@ -1201,17 +1211,17 @@ func shell(s ssh.Session, version, gitSha, gitTag string) error {
 					Name:  "ls",
 					Usage: "Lists host groups",
 					Flags: []cli.Flag{
-						&cli.BoolFlag{Name: "latest", Aliases: []string{"l"}, Usage: "Show the latest host group"},
-						&cli.BoolFlag{Name: "quiet", Aliases: []string{"q"}, Usage: "Only display IDs"},
+						&cli.BoolFlag{Name: FlagLatestName, Aliases: []string{"l"}, Usage: "Show the latest host group"},
+						&cli.BoolFlag{Name: FlagQuietName, Aliases: []string{"q"}, Usage: FlagQuietUsage},
 					},
 					Action: func(c context.Context, cmd *cli.Command) error {
-						if err := myself.CheckRoles([]string{"admin"}); err != nil {
+						if err := myself.CheckRoles([]string{UserAdminName}); err != nil {
 							return err
 						}
 
 						var hostGroups []*dbmodels.HostGroup
 						query := db.Order("created_at desc").Preload("ACLs").Preload("Hosts")
-						if cmd.Bool("latest") {
+						if cmd.Bool(FlagLatestName) {
 							var hostGroup dbmodels.HostGroup
 							if err := query.First(&hostGroup).Error; err != nil {
 								return err
@@ -1221,7 +1231,7 @@ func shell(s ssh.Session, version, gitSha, gitTag string) error {
 							return err
 						}
 
-						if cmd.Bool("quiet") {
+						if cmd.Bool(FlagQuietName) {
 							for _, hostGroup := range hostGroups {
 								fmt.Fprintln(s, hostGroup.ID)
 							}
@@ -1233,7 +1243,7 @@ func shell(s ssh.Session, version, gitSha, gitTag string) error {
 								Symbols: tw.NewSymbols(tw.StyleRounded),
 							}),
 						)
-						table.Header("ID", "Name", "Hosts", "ACLs", "Updated", "Created", "Comment")
+						table.Header("ID", "Name", "Hosts", "ACLs", "Updated", "Created", FlagCommentName)
 						table.Caption(tw.Caption{
 							Text:  fmt.Sprintf("Total: %d host groups", len(hostGroups)),
 							Spot:  tw.SpotBottomCenter,
@@ -1267,7 +1277,7 @@ func shell(s ssh.Session, version, gitSha, gitTag string) error {
 							return cli.ShowSubcommandHelp(cmd)
 						}
 
-						if err := myself.CheckRoles([]string{"admin"}); err != nil {
+						if err := myself.CheckRoles([]string{UserAdminName}); err != nil {
 							return err
 						}
 
@@ -1279,14 +1289,14 @@ func shell(s ssh.Session, version, gitSha, gitTag string) error {
 					ArgsUsage: "HOSTGROUP...",
 					Flags: []cli.Flag{
 						&cli.StringFlag{Name: "name", Usage: "Assigns a new name to the host group"},
-						&cli.StringFlag{Name: "comment", Usage: "Adds a comment"},
+						&cli.StringFlag{Name: FlagCommentName, Usage: FlagCommentUsage},
 					},
 					Action: func(c context.Context, cmd *cli.Command) error {
 						if cmd.NArg() < 1 {
 							return cli.ShowSubcommandHelp(cmd)
 						}
 
-						if err := myself.CheckRoles([]string{"admin"}); err != nil {
+						if err := myself.CheckRoles([]string{UserAdminName}); err != nil {
 							return err
 						}
 
@@ -1303,7 +1313,7 @@ func shell(s ssh.Session, version, gitSha, gitTag string) error {
 						for _, hostgroup := range hostgroups {
 							model := tx.Model(hostgroup)
 							// simple fields
-							for _, fieldname := range []string{"name", "comment"} {
+							for _, fieldname := range []string{"name", FlagCommentName} {
 								if cmd.String(fieldname) != "" {
 									if err := model.Update(fieldname, cmd.String(fieldname)).Error; err != nil {
 										tx.Rollback()
@@ -1320,7 +1330,7 @@ func shell(s ssh.Session, version, gitSha, gitTag string) error {
 			Name:  "info",
 			Usage: "Shows system-wide information",
 			Action: func(c context.Context, cmd *cli.Command) error {
-				if err := myself.CheckRoles([]string{"admin"}); err != nil {
+				if err := myself.CheckRoles([]string{UserAdminName}); err != nil {
 					return err
 				}
 
@@ -1363,10 +1373,10 @@ func shell(s ssh.Session, version, gitSha, gitTag string) error {
 						&cli.StringFlag{Name: "name", Usage: "Assigns a name to the key"},
 						&cli.StringFlag{Name: "type", Value: "ed25519"},
 						&cli.UintFlag{Name: "length", Value: 0},
-						&cli.StringFlag{Name: "comment", Usage: "Adds a comment"},
+						&cli.StringFlag{Name: FlagCommentName, Usage: FlagCommentUsage},
 					},
 					Action: func(c context.Context, cmd *cli.Command) error {
-						if err := myself.CheckRoles([]string{"admin"}); err != nil {
+						if err := myself.CheckRoles([]string{UserAdminName}); err != nil {
 							return err
 						}
 
@@ -1401,7 +1411,7 @@ func shell(s ssh.Session, version, gitSha, gitTag string) error {
 						}
 
 						key.Name = name
-						key.Comment = cmd.String("comment")
+						key.Comment = cmd.String(FlagCommentName)
 
 						if _, err := govalidator.ValidateStruct(key); err != nil {
 							return err
@@ -1421,10 +1431,10 @@ func shell(s ssh.Session, version, gitSha, gitTag string) error {
 					Flags: []cli.Flag{
 						&cli.StringFlag{Name: "name", Usage: "Assigns a name to the key"},
 						&cli.StringFlag{Name: "type", Value: "ed25519", Usage: "Key type (rsa, ed25519)"},
-						&cli.StringFlag{Name: "comment", Usage: "Adds a comment"},
+						&cli.StringFlag{Name: FlagCommentName, Usage: FlagCommentUsage},
 					},
 					Action: func(c context.Context, cmd *cli.Command) error {
-						if err := myself.CheckRoles([]string{"admin"}); err != nil {
+						if err := myself.CheckRoles([]string{UserAdminName}); err != nil {
 							return err
 						}
 
@@ -1466,7 +1476,7 @@ func shell(s ssh.Session, version, gitSha, gitTag string) error {
 						}
 
 						key.Name = name
-						key.Comment = cmd.String("comment")
+						key.Comment = cmd.String(FlagCommentName)
 
 						if _, err := govalidator.ValidateStruct(key); err != nil {
 							return err
@@ -1482,7 +1492,7 @@ func shell(s ssh.Session, version, gitSha, gitTag string) error {
 						return nil
 					},
 				}, {
-					Name:      "inspect",
+					Name:      FlagInspectName,
 					Usage:     "Shows detailed information on one or more keys",
 					ArgsUsage: "KEY...",
 					Flags: []cli.Flag{
@@ -1493,7 +1503,7 @@ func shell(s ssh.Session, version, gitSha, gitTag string) error {
 							return cli.ShowSubcommandHelp(cmd)
 						}
 
-						if err := myself.CheckRoles([]string{"admin"}); err != nil {
+						if err := myself.CheckRoles([]string{UserAdminName}); err != nil {
 							return err
 						}
 
@@ -1518,17 +1528,17 @@ func shell(s ssh.Session, version, gitSha, gitTag string) error {
 					Name:  "ls",
 					Usage: "Lists keys",
 					Flags: []cli.Flag{
-						&cli.BoolFlag{Name: "latest", Aliases: []string{"l"}, Usage: "Show the latest key"},
-						&cli.BoolFlag{Name: "quiet", Aliases: []string{"q"}, Usage: "Only display IDs"},
+						&cli.BoolFlag{Name: FlagLatestName, Aliases: []string{"l"}, Usage: "Show the latest key"},
+						&cli.BoolFlag{Name: FlagQuietName, Aliases: []string{"q"}, Usage: FlagQuietUsage},
 					},
 					Action: func(c context.Context, cmd *cli.Command) error {
-						if err := myself.CheckRoles([]string{"admin"}); err != nil {
+						if err := myself.CheckRoles([]string{UserAdminName}); err != nil {
 							return err
 						}
 
 						var sshKeys []*dbmodels.SSHKey
 						query := db.Order("created_at desc").Preload("Hosts")
-						if cmd.Bool("latest") {
+						if cmd.Bool(FlagLatestName) {
 							var sshKey dbmodels.SSHKey
 							if err := query.First(&sshKey).Error; err != nil {
 								return err
@@ -1537,7 +1547,7 @@ func shell(s ssh.Session, version, gitSha, gitTag string) error {
 						} else if err := query.Find(&sshKeys).Error; err != nil {
 							return err
 						}
-						if cmd.Bool("quiet") {
+						if cmd.Bool(FlagQuietName) {
 							for _, sshKey := range sshKeys {
 								fmt.Fprintln(s, sshKey.ID)
 							}
@@ -1593,7 +1603,7 @@ func shell(s ssh.Session, version, gitSha, gitTag string) error {
 							return cli.ShowSubcommandHelp(cmd)
 						}
 
-						if err := myself.CheckRoles([]string{"admin"}); err != nil {
+						if err := myself.CheckRoles([]string{UserAdminName}); err != nil {
 							return err
 						}
 
@@ -1626,7 +1636,7 @@ func shell(s ssh.Session, version, gitSha, gitTag string) error {
 							return cli.ShowSubcommandHelp(cmd)
 						}
 
-						if err := myself.CheckRoles([]string{"admin"}); err != nil {
+						if err := myself.CheckRoles([]string{UserAdminName}); err != nil {
 							return err
 						}
 
@@ -1673,7 +1683,7 @@ func shell(s ssh.Session, version, gitSha, gitTag string) error {
 							}, {
 								name: "Help",
 								lines: []line{
-									{"inspect", fmt.Sprintf("ssh sshportal key inspect %s", key.Name)},
+									{FlagInspectName, fmt.Sprintf("ssh sshportal key inspect %s", key.Name)},
 									{"setup", fmt.Sprintf(`ssh user@example.com "$(ssh sshportal key setup %s)"`, key.Name)},
 								},
 							},
@@ -1699,7 +1709,7 @@ func shell(s ssh.Session, version, gitSha, gitTag string) error {
 			Usage: "Manages users",
 			Commands: []*cli.Command{
 				{
-					Name:      "inspect",
+					Name:      FlagInspectName,
 					Usage:     "Shows detailed information on one or more users",
 					ArgsUsage: "USER...",
 					Action: func(c context.Context, cmd *cli.Command) error {
@@ -1707,7 +1717,7 @@ func shell(s ssh.Session, version, gitSha, gitTag string) error {
 							return cli.ShowSubcommandHelp(cmd)
 						}
 
-						if err := myself.CheckRoles([]string{"admin"}); err != nil {
+						if err := myself.CheckRoles([]string{UserAdminName}); err != nil {
 							return err
 						}
 
@@ -1726,7 +1736,7 @@ func shell(s ssh.Session, version, gitSha, gitTag string) error {
 					Usage:     "Invites a new user",
 					Flags: []cli.Flag{
 						&cli.StringFlag{Name: "name", Usage: "Assigns a name to the user"},
-						&cli.StringFlag{Name: "comment", Usage: "Adds a comment"},
+						&cli.StringFlag{Name: FlagCommentName, Usage: FlagCommentUsage},
 						&cli.StringSliceFlag{Name: "group", Aliases: []string{"g"}, Usage: "Names or IDs of `USERGROUPS` (default: \"default\")"},
 					},
 					Action: func(c context.Context, cmd *cli.Command) error {
@@ -1734,7 +1744,7 @@ func shell(s ssh.Session, version, gitSha, gitTag string) error {
 							return cli.ShowSubcommandHelp(cmd)
 						}
 
-						if err := myself.CheckRoles([]string{"admin"}); err != nil {
+						if err := myself.CheckRoles([]string{UserAdminName}); err != nil {
 							return err
 						}
 
@@ -1755,7 +1765,7 @@ func shell(s ssh.Session, version, gitSha, gitTag string) error {
 						user := dbmodels.User{
 							Name:        name,
 							Email:       email,
-							Comment:     cmd.String("comment"),
+							Comment:     cmd.String(FlagCommentName),
 							InviteToken: r,
 						}
 
@@ -1783,17 +1793,17 @@ func shell(s ssh.Session, version, gitSha, gitTag string) error {
 					Name:  "ls",
 					Usage: "Lists users",
 					Flags: []cli.Flag{
-						&cli.BoolFlag{Name: "latest", Aliases: []string{"l"}, Usage: "Show the latest user"},
-						&cli.BoolFlag{Name: "quiet", Aliases: []string{"q"}, Usage: "Only display IDs"},
+						&cli.BoolFlag{Name: FlagLatestName, Aliases: []string{"l"}, Usage: "Show the latest user"},
+						&cli.BoolFlag{Name: FlagQuietName, Aliases: []string{"q"}, Usage: FlagQuietUsage},
 					},
 					Action: func(c context.Context, cmd *cli.Command) error {
-						if err := myself.CheckRoles([]string{"admin"}); err != nil {
+						if err := myself.CheckRoles([]string{UserAdminName}); err != nil {
 							return err
 						}
 
 						var users []*dbmodels.User
 						query := db.Order("created_at desc").Preload("Groups").Preload("Roles").Preload("Keys")
-						if cmd.Bool("latest") {
+						if cmd.Bool(FlagLatestName) {
 							var user dbmodels.User
 							if err := query.First(&user).Error; err != nil {
 								return err
@@ -1802,7 +1812,7 @@ func shell(s ssh.Session, version, gitSha, gitTag string) error {
 						} else if err := query.Find(&users).Error; err != nil {
 							return err
 						}
-						if cmd.Bool("quiet") {
+						if cmd.Bool(FlagQuietName) {
 							for _, user := range users {
 								fmt.Fprintln(s, user.ID)
 							}
@@ -1869,7 +1879,7 @@ func shell(s ssh.Session, version, gitSha, gitTag string) error {
 							return cli.ShowSubcommandHelp(cmd)
 						}
 
-						if err := myself.CheckRoles([]string{"admin"}); err != nil {
+						if err := myself.CheckRoles([]string{UserAdminName}); err != nil {
 							return err
 						}
 
@@ -1894,7 +1904,7 @@ func shell(s ssh.Session, version, gitSha, gitTag string) error {
 							return cli.ShowSubcommandHelp(cmd)
 						}
 
-						if err := myself.CheckRoles([]string{"admin"}); err != nil {
+						if err := myself.CheckRoles([]string{UserAdminName}); err != nil {
 							return err
 						}
 
@@ -1916,7 +1926,7 @@ func shell(s ssh.Session, version, gitSha, gitTag string) error {
 						for _, user := range users {
 							model := tx.Model(user)
 							// simple fields
-							for _, fieldname := range []string{"name", "email", "comment"} {
+							for _, fieldname := range []string{"name", "email", FlagCommentName} {
 								if cmd.String(fieldname) != "" {
 									if err := model.Update(fieldname, cmd.String(fieldname)).Error; err != nil {
 										tx.Rollback()
@@ -2006,16 +2016,16 @@ func shell(s ssh.Session, version, gitSha, gitTag string) error {
 					Usage: "Creates a new user group",
 					Flags: []cli.Flag{
 						&cli.StringFlag{Name: "name", Usage: "Assigns a name to the user group"},
-						&cli.StringFlag{Name: "comment", Usage: "Adds a comment"},
+						&cli.StringFlag{Name: FlagCommentName, Usage: FlagCommentUsage},
 					},
 					Action: func(c context.Context, cmd *cli.Command) error {
-						if err := myself.CheckRoles([]string{"admin"}); err != nil {
+						if err := myself.CheckRoles([]string{UserAdminName}); err != nil {
 							return err
 						}
 
 						userGroup := dbmodels.UserGroup{
 							Name:    cmd.String("name"),
-							Comment: cmd.String("comment"),
+							Comment: cmd.String(FlagCommentName),
 						}
 						if userGroup.Name == "" {
 							userGroup.Name = namesgenerator.GetRandomName(0)
@@ -2036,7 +2046,7 @@ func shell(s ssh.Session, version, gitSha, gitTag string) error {
 						return nil
 					},
 				}, {
-					Name:      "inspect",
+					Name:      FlagInspectName,
 					Usage:     "Shows detailed information on one or more user groups",
 					ArgsUsage: "USERGROUP...",
 					Action: func(c context.Context, cmd *cli.Command) error {
@@ -2044,7 +2054,7 @@ func shell(s ssh.Session, version, gitSha, gitTag string) error {
 							return cli.ShowSubcommandHelp(cmd)
 						}
 
-						if err := myself.CheckRoles([]string{"admin"}); err != nil {
+						if err := myself.CheckRoles([]string{UserAdminName}); err != nil {
 							return err
 						}
 
@@ -2061,17 +2071,17 @@ func shell(s ssh.Session, version, gitSha, gitTag string) error {
 					Name:  "ls",
 					Usage: "Lists user groups",
 					Flags: []cli.Flag{
-						&cli.BoolFlag{Name: "latest", Aliases: []string{"l"}, Usage: "Show the latest user group"},
-						&cli.BoolFlag{Name: "quiet", Aliases: []string{"q"}, Usage: "Only display IDs"},
+						&cli.BoolFlag{Name: FlagLatestName, Aliases: []string{"l"}, Usage: "Show the latest user group"},
+						&cli.BoolFlag{Name: FlagQuietName, Aliases: []string{"q"}, Usage: FlagQuietUsage},
 					},
 					Action: func(c context.Context, cmd *cli.Command) error {
-						if err := myself.CheckRoles([]string{"admin"}); err != nil {
+						if err := myself.CheckRoles([]string{UserAdminName}); err != nil {
 							return err
 						}
 
 						var userGroups []*dbmodels.UserGroup
 						query := db.Order("created_at desc").Preload("ACLs").Preload("Users")
-						if cmd.Bool("latest") {
+						if cmd.Bool(FlagLatestName) {
 							var userGroup dbmodels.UserGroup
 							if err := query.First(&userGroup).Error; err != nil {
 								return err
@@ -2080,7 +2090,7 @@ func shell(s ssh.Session, version, gitSha, gitTag string) error {
 						} else if err := query.Find(&userGroups).Error; err != nil {
 							return err
 						}
-						if cmd.Bool("quiet") {
+						if cmd.Bool(FlagQuietName) {
 							for _, userGroup := range userGroups {
 								fmt.Fprintln(s, userGroup.ID)
 							}
@@ -2126,7 +2136,7 @@ func shell(s ssh.Session, version, gitSha, gitTag string) error {
 							return cli.ShowSubcommandHelp(cmd)
 						}
 
-						if err := myself.CheckRoles([]string{"admin"}); err != nil {
+						if err := myself.CheckRoles([]string{UserAdminName}); err != nil {
 							return err
 						}
 
@@ -2138,14 +2148,14 @@ func shell(s ssh.Session, version, gitSha, gitTag string) error {
 					ArgsUsage: "USERGROUP...",
 					Flags: []cli.Flag{
 						&cli.StringFlag{Name: "name", Usage: "Assigns a new name to the user group"},
-						&cli.StringFlag{Name: "comment", Usage: "Adds a comment"},
+						&cli.StringFlag{Name: FlagCommentName, Usage: FlagCommentUsage},
 					},
 					Action: func(c context.Context, cmd *cli.Command) error {
 						if cmd.NArg() < 1 {
 							return cli.ShowSubcommandHelp(cmd)
 						}
 
-						if err := myself.CheckRoles([]string{"admin"}); err != nil {
+						if err := myself.CheckRoles([]string{UserAdminName}); err != nil {
 							return err
 						}
 
@@ -2162,7 +2172,7 @@ func shell(s ssh.Session, version, gitSha, gitTag string) error {
 						for _, usergroup := range usergroups {
 							model := tx.Model(usergroup)
 							// simple fields
-							for _, fieldname := range []string{"name", "comment"} {
+							for _, fieldname := range []string{"name", FlagCommentName} {
 								if cmd.String(fieldname) != "" {
 									if err := model.Update(fieldname, cmd.String(fieldname)).Error; err != nil {
 										tx.Rollback()
@@ -2184,14 +2194,14 @@ func shell(s ssh.Session, version, gitSha, gitTag string) error {
 					ArgsUsage: "<user ID or email>",
 					Usage:     "Creates a new userkey for an existing user",
 					Flags: []cli.Flag{
-						&cli.StringFlag{Name: "comment", Usage: "Adds a comment"},
+						&cli.StringFlag{Name: FlagCommentName, Usage: FlagCommentUsage},
 					},
 					Action: func(c context.Context, cmd *cli.Command) error {
 						if cmd.NArg() != 1 {
 							return cli.ShowSubcommandHelp(cmd)
 						}
 
-						if err := myself.CheckRoles([]string{"admin"}); err != nil {
+						if err := myself.CheckRoles([]string{UserAdminName}); err != nil {
 							return err
 						}
 
@@ -2232,8 +2242,8 @@ func shell(s ssh.Session, version, gitSha, gitTag string) error {
 									Comment:       comment,
 									AuthorizedKey: string(gossh.MarshalAuthorizedKey(key)),
 								}
-								if cmd.String("comment") != "" {
-									userkey.Comment = cmd.String("comment")
+								if cmd.String(FlagCommentName) != "" {
+									userkey.Comment = cmd.String(FlagCommentName)
 								}
 
 								if _, err := govalidator.ValidateStruct(userkey); err != nil {
@@ -2255,7 +2265,7 @@ func shell(s ssh.Session, version, gitSha, gitTag string) error {
 						return nil
 					},
 				}, {
-					Name:      "inspect",
+					Name:      FlagInspectName,
 					Usage:     "Shows detailed information on one or more userkeys",
 					ArgsUsage: "USERKEY...",
 					Action: func(c context.Context, cmd *cli.Command) error {
@@ -2263,7 +2273,7 @@ func shell(s ssh.Session, version, gitSha, gitTag string) error {
 							return cli.ShowSubcommandHelp(cmd)
 						}
 
-						if err := myself.CheckRoles([]string{"admin"}); err != nil {
+						if err := myself.CheckRoles([]string{UserAdminName}); err != nil {
 							return err
 						}
 
@@ -2280,17 +2290,17 @@ func shell(s ssh.Session, version, gitSha, gitTag string) error {
 					Name:  "ls",
 					Usage: "Lists userkeys",
 					Flags: []cli.Flag{
-						&cli.BoolFlag{Name: "latest", Aliases: []string{"l"}, Usage: "Show the latest user key"},
-						&cli.BoolFlag{Name: "quiet", Aliases: []string{"q"}, Usage: "Only display IDs"},
+						&cli.BoolFlag{Name: FlagLatestName, Aliases: []string{"l"}, Usage: "Show the latest user key"},
+						&cli.BoolFlag{Name: FlagQuietName, Aliases: []string{"q"}, Usage: FlagQuietUsage},
 					},
 					Action: func(c context.Context, cmd *cli.Command) error {
-						if err := myself.CheckRoles([]string{"admin"}); err != nil {
+						if err := myself.CheckRoles([]string{UserAdminName}); err != nil {
 							return err
 						}
 
 						var userKeys []*dbmodels.UserKey
 						query := db.Order("created_at desc").Preload("User")
-						if cmd.Bool("latest") {
+						if cmd.Bool(FlagLatestName) {
 							var userKey dbmodels.UserKey
 							if err := query.First(&userKey).Error; err != nil {
 								return err
@@ -2299,7 +2309,7 @@ func shell(s ssh.Session, version, gitSha, gitTag string) error {
 						} else if err := query.Find(&userKeys).Error; err != nil {
 							return err
 						}
-						if cmd.Bool("quiet") {
+						if cmd.Bool(FlagQuietName) {
 							for _, userKey := range userKeys {
 								fmt.Fprintln(s, userKey.ID)
 							}
@@ -2354,7 +2364,7 @@ func shell(s ssh.Session, version, gitSha, gitTag string) error {
 							return cli.ShowSubcommandHelp(cmd)
 						}
 
-						if err := myself.CheckRoles([]string{"admin"}); err != nil {
+						if err := myself.CheckRoles([]string{UserAdminName}); err != nil {
 							return err
 						}
 						if err := dbmodels.UserKeysByIdentifiers(db, cmd.Args().Slice()).Find(&dbmodels.UserKey{}).Error; err != nil {
@@ -2376,7 +2386,7 @@ func shell(s ssh.Session, version, gitSha, gitTag string) error {
 			Usage: "Manages sessions",
 			Commands: []*cli.Command{
 				{
-					Name:      "inspect",
+					Name:      FlagInspectName,
 					Usage:     "Shows detailed information on one or more sessions",
 					ArgsUsage: "SESSION...",
 					Action: func(c context.Context, cmd *cli.Command) error {
@@ -2384,7 +2394,7 @@ func shell(s ssh.Session, version, gitSha, gitTag string) error {
 							return cli.ShowSubcommandHelp(cmd)
 						}
 
-						if err := myself.CheckRoles([]string{"admin"}); err != nil {
+						if err := myself.CheckRoles([]string{UserAdminName}); err != nil {
 							return err
 						}
 
@@ -2401,12 +2411,12 @@ func shell(s ssh.Session, version, gitSha, gitTag string) error {
 					Name:  "ls",
 					Usage: "Lists sessions",
 					Flags: []cli.Flag{
-						&cli.BoolFlag{Name: "latest", Aliases: []string{"l"}, Usage: "Show the latest session"},
+						&cli.BoolFlag{Name: FlagLatestName, Aliases: []string{"l"}, Usage: "Show the latest session"},
 						&cli.BoolFlag{Name: "active", Aliases: []string{"a"}, Usage: "Show only active session"},
-						&cli.BoolFlag{Name: "quiet", Aliases: []string{"q"}, Usage: "Only display IDs"},
+						&cli.BoolFlag{Name: FlagQuietName, Aliases: []string{"q"}, Usage: FlagQuietUsage},
 					},
 					Action: func(c context.Context, cmd *cli.Command) error {
-						if err := myself.CheckRoles([]string{"admin"}); err != nil {
+						if err := myself.CheckRoles([]string{UserAdminName}); err != nil {
 							return err
 						}
 
@@ -2419,7 +2429,7 @@ func shell(s ssh.Session, version, gitSha, gitTag string) error {
 
 						query := db.Order("created_at desc").Limit(limit).Offset(offset).Where("status in (?)", status).Preload("User").Preload("Host")
 
-						if cmd.Bool("latest") {
+						if cmd.Bool(FlagLatestName) {
 							var session dbmodels.Session
 							if err := query.First(&session).Error; err != nil {
 								return err
@@ -2443,7 +2453,7 @@ func shell(s ssh.Session, version, gitSha, gitTag string) error {
 								factor++
 							}
 						}
-						if cmd.Bool("quiet") {
+						if cmd.Bool(FlagQuietName) {
 							for _, session := range sessions {
 								fmt.Fprintln(s, session.ID)
 							}

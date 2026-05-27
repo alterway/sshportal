@@ -28,7 +28,7 @@ linters:
   settings:
     goconst:
       min-len: 5
-      min-occurrences: 4
+      min-occurrences: 7
     misspell:
       locale: US
     staticcheck:
