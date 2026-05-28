@@ -2228,7 +2228,7 @@ func shell(s ssh.Session, version, gitSha, gitTag string) error {
 								return errReadline
 							}
 							if text != "" && text != "\n" {
-								key, comment, _, _, err := ssh.ParseAuthorizedKey([]byte(text))
+								key, comment, _, _, err := gossh.ParseAuthorizedKey([]byte(text))
 								if err != nil {
 									return err
 								}
