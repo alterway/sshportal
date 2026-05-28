@@ -19,7 +19,6 @@ import (
 
 	shlex "github.com/anmitsu/go-shlex"
 	"github.com/asaskevich/govalidator"
-	"github.com/docker/docker/pkg/namesgenerator"
 	humanize "github.com/dustin/go-humanize"
 	"github.com/gliderlabs/ssh"
 	"github.com/olekukonko/tablewriter"
@@ -1172,7 +1171,7 @@ func shell(s ssh.Session, version, gitSha, gitTag string) error {
 							Comment: cmd.String(FlagCommentName),
 						}
 						if hostGroup.Name == "" {
-							hostGroup.Name = namesgenerator.GetRandomName(0)
+							hostGroup.Name = utils.GetRandomName(0)
 						}
 						if _, err := govalidator.ValidateStruct(hostGroup); err != nil {
 							return err
@@ -1380,7 +1379,7 @@ func shell(s ssh.Session, version, gitSha, gitTag string) error {
 							return err
 						}
 
-						name := namesgenerator.GetRandomName(0)
+						name := utils.GetRandomName(0)
 						if cmd.String("name") != "" {
 							name = cmd.String("name")
 						}
@@ -1442,7 +1441,7 @@ func shell(s ssh.Session, version, gitSha, gitTag string) error {
 						if cmd.String("name") != "" {
 							name = cmd.String("name")
 						} else {
-							name = namesgenerator.GetRandomName(0)
+							name = utils.GetRandomName(0)
 						}
 
 						var value string
@@ -2028,7 +2027,7 @@ func shell(s ssh.Session, version, gitSha, gitTag string) error {
 							Comment: cmd.String(FlagCommentName),
 						}
 						if userGroup.Name == "" {
-							userGroup.Name = namesgenerator.GetRandomName(0)
+							userGroup.Name = utils.GetRandomName(0)
 						}
 
 						if _, err := govalidator.ValidateStruct(userGroup); err != nil {
