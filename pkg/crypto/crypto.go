@@ -18,7 +18,7 @@ import (
 
 	"github.com/alterway/sshportal/pkg/dbmodels"
 
-	gossh "golang.org/x/crypto/ssh"
+	"golang.org/x/crypto/ssh"
 )
 
 func NewSSHKey(keyType string, length uint) (*dbmodels.SSHKey, error) {
@@ -30,7 +30,7 @@ func NewSSHKey(keyType string, length uint) (*dbmodels.SSHKey, error) {
 	// generate the private key
 	var err error
 	var pemKey *pem.Block
-	var publicKey gossh.PublicKey
+	var publicKey ssh.PublicKey
 	switch keyType {
 	case "rsa":
 		pemKey, publicKey, err = NewRSAKey(length)
@@ -53,12 +53,12 @@ func NewSSHKey(keyType string, length uint) (*dbmodels.SSHKey, error) {
 	key.PrivKey = buf.String()
 
 	// generate authorized-key formatted pubkey output
-	key.PubKey = strings.TrimSpace(string(gossh.MarshalAuthorizedKey(publicKey)))
+	key.PubKey = strings.TrimSpace(string(ssh.MarshalAuthorizedKey(publicKey)))
 
 	return &key, nil
 }
 
-func NewRSAKey(length uint) (*pem.Block, gossh.PublicKey, error) {
+func NewRSAKey(length uint) (*pem.Block, ssh.PublicKey, error) {
 	if length < 2048 || length > 16384 {
 		return nil, nil, fmt.Errorf("key length not supported: %d, supported values are between 2048 and 16384", length)
 	}
@@ -71,14 +71,14 @@ func NewRSAKey(length uint) (*pem.Block, gossh.PublicKey, error) {
 		Type:  "RSA PRIVATE KEY",
 		Bytes: x509.MarshalPKCS1PrivateKey(privateKey),
 	}
-	publicKey, err := gossh.NewPublicKey(&privateKey.PublicKey)
+	publicKey, err := ssh.NewPublicKey(&privateKey.PublicKey)
 	if err != nil {
 		return nil, nil, err
 	}
 	return pemKey, publicKey, err
 }
 
-func NewECDSAKey(length uint) (*pem.Block, gossh.PublicKey, error) {
+func NewECDSAKey(length uint) (*pem.Block, ssh.PublicKey, error) {
 	var curve elliptic.Curve
 	switch length {
 	case 256:
@@ -103,14 +103,14 @@ func NewECDSAKey(length uint) (*pem.Block, gossh.PublicKey, error) {
 	if err != nil {
 		return nil, nil, err
 	}
-	publicKey, err := gossh.NewPublicKey(&privateKey.PublicKey)
+	publicKey, err := ssh.NewPublicKey(&privateKey.PublicKey)
 	if err != nil {
 		return nil, nil, err
 	}
 	return pemKey, publicKey, err
 }
 
-func NewEd25519Key() (*pem.Block, gossh.PublicKey, error) {
+func NewEd25519Key() (*pem.Block, ssh.PublicKey, error) {
 	publicKeyEd25519, privateKey, err := ed25519.GenerateKey(rand.Reader)
 	if err != nil {
 		return nil, nil, err
@@ -124,7 +124,7 @@ func NewEd25519Key() (*pem.Block, gossh.PublicKey, error) {
 	if err != nil {
 		return nil, nil, err
 	}
-	publicKey, err := gossh.NewPublicKey(publicKeyEd25519)
+	publicKey, err := ssh.NewPublicKey(publicKeyEd25519)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -136,7 +136,7 @@ func ImportRSASSHKey(keyValue string) (*dbmodels.SSHKey, error) {
 		Type: "rsa",
 	}
 
-	parsedKey, err := gossh.ParseRawPrivateKey([]byte(keyValue))
+	parsedKey, err := ssh.ParseRawPrivateKey([]byte(keyValue))
 	if err != nil {
 		return nil, err
 	}
@@ -158,11 +158,11 @@ func ImportRSASSHKey(keyValue string) (*dbmodels.SSHKey, error) {
 	key.PrivKey = buf.String()
 
 	// generte authorized-key formatted pubkey output
-	pub, err := gossh.NewPublicKey(&privateKey.PublicKey)
+	pub, err := ssh.NewPublicKey(&privateKey.PublicKey)
 	if err != nil {
 		return nil, err
 	}
-	key.PubKey = strings.TrimSpace(string(gossh.MarshalAuthorizedKey(pub)))
+	key.PubKey = strings.TrimSpace(string(ssh.MarshalAuthorizedKey(pub)))
 
 	return &key, nil
 }
@@ -172,7 +172,7 @@ func ImportEd25519SSHKey(keyValue string) (*dbmodels.SSHKey, error) {
 		Type: "ed25519",
 	}
 
-	parsedKey, err := gossh.ParseRawPrivateKey([]byte(keyValue))
+	parsedKey, err := ssh.ParseRawPrivateKey([]byte(keyValue))
 	if err != nil {
 		return nil, err
 	}
@@ -216,11 +216,11 @@ func ImportEd25519SSHKey(keyValue string) (*dbmodels.SSHKey, error) {
 
 	// generate authorized-key formatted pubkey output
 	publicKey := privateKey.Public().(ed25519.PublicKey)
-	pub, err := gossh.NewPublicKey(publicKey)
+	pub, err := ssh.NewPublicKey(publicKey)
 	if err != nil {
 		return nil, err
 	}
-	key.PubKey = strings.TrimSpace(string(gossh.MarshalAuthorizedKey(pub)))
+	key.PubKey = strings.TrimSpace(string(ssh.MarshalAuthorizedKey(pub)))
 
 	return &key, nil
 }

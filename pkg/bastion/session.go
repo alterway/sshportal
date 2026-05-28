@@ -8,19 +8,19 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/gliderlabs/ssh"
-	gossh "golang.org/x/crypto/ssh"
+	gliderssh "github.com/gliderlabs/ssh"
+	"golang.org/x/crypto/ssh"
 )
 
 type sessionConfig struct {
 	Addr         string
 	LogsLocation string
-	ClientConfig *gossh.ClientConfig
+	ClientConfig *ssh.ClientConfig
 	LoggingMode  string
 }
 
-func multiChannelHandler(conn *gossh.ServerConn, newChan gossh.NewChannel, ctx ssh.Context, configs []sessionConfig, sessionID uint) error {
-	var lastClient *gossh.Client
+func multiChannelHandler(conn *ssh.ServerConn, newChan ssh.NewChannel, ctx gliderssh.Context, configs []sessionConfig, sessionID uint) error {
+	var lastClient *ssh.Client
 	switch newChan.ChannelType() {
 	case "session":
 		lch, lreqs, err := newChan.Accept()
@@ -32,19 +32,19 @@ func multiChannelHandler(conn *gossh.ServerConn, newChan gossh.NewChannel, ctx s
 
 		// go through all the hops
 		for _, config := range configs {
-			var client *gossh.Client
+			var client *ssh.Client
 			if lastClient == nil {
-				client, err = gossh.Dial("tcp", config.Addr, config.ClientConfig)
+				client, err = ssh.Dial("tcp", config.Addr, config.ClientConfig)
 			} else {
 				rconn, err := lastClient.Dial("tcp", config.Addr)
 				if err != nil {
 					return err
 				}
-				ncc, chans, reqs, err := gossh.NewClientConn(rconn, config.Addr, config.ClientConfig)
+				ncc, chans, reqs, err := ssh.NewClientConn(rconn, config.Addr, config.ClientConfig)
 				if err != nil {
 					return err
 				}
-				client = gossh.NewClient(ncc, chans, reqs)
+				client = ssh.NewClient(ncc, chans, reqs)
 			}
 			if err != nil {
 				// fix #56
@@ -76,19 +76,19 @@ func multiChannelHandler(conn *gossh.ServerConn, newChan gossh.NewChannel, ctx s
 
 		// go through all the hops
 		for _, config := range configs {
-			var client *gossh.Client
+			var client *ssh.Client
 			if lastClient == nil {
-				client, err = gossh.Dial("tcp", config.Addr, config.ClientConfig)
+				client, err = ssh.Dial("tcp", config.Addr, config.ClientConfig)
 			} else {
 				rconn, err := lastClient.Dial("tcp", config.Addr)
 				if err != nil {
 					return err
 				}
-				ncc, chans, reqs, err := gossh.NewClientConn(rconn, config.Addr, config.ClientConfig)
+				ncc, chans, reqs, err := ssh.NewClientConn(rconn, config.Addr, config.ClientConfig)
 				if err != nil {
 					return err
 				}
-				client = gossh.NewClient(ncc, chans, reqs)
+				client = ssh.NewClient(ncc, chans, reqs)
 			}
 			if err != nil {
 				if err := lch.Close(); err != nil {
@@ -101,7 +101,7 @@ func multiChannelHandler(conn *gossh.ServerConn, newChan gossh.NewChannel, ctx s
 		}
 
 		d := logTunnelForwardData{}
-		if err := gossh.Unmarshal(newChan.ExtraData(), &d); err != nil {
+		if err := ssh.Unmarshal(newChan.ExtraData(), &d); err != nil {
 			return err
 		}
 		rch, rreqs, err := lastClient.OpenChannel("direct-tcpip", newChan.ExtraData())
@@ -114,14 +114,14 @@ func multiChannelHandler(conn *gossh.ServerConn, newChan gossh.NewChannel, ctx s
 		// pipe everything
 		return pipe(lreqs, rreqs, lch, rch, configs[len(configs)-1], user, username, sessionID, newChan)
 	default:
-		if err := newChan.Reject(gossh.UnknownChannelType, "unsupported channel type"); err != nil {
+		if err := newChan.Reject(ssh.UnknownChannelType, "unsupported channel type"); err != nil {
 			log.Printf("failed to reject chan: %v", err)
 		}
 		return nil
 	}
 }
 
-func pipe(lreqs, rreqs <-chan *gossh.Request, lch, rch gossh.Channel, sessConfig sessionConfig, user string, username string, sessionID uint, newChan gossh.NewChannel) error {
+func pipe(lreqs, rreqs <-chan *ssh.Request, lch, rch ssh.Channel, sessConfig sessionConfig, user string, username string, sessionID uint, newChan ssh.NewChannel) error {
 	defer func() {
 		_ = lch.Close()
 		_ = rch.Close()
@@ -171,7 +171,7 @@ func pipe(lreqs, rreqs <-chan *gossh.Request, lch, rch gossh.Channel, sessConfig
 	}
 	if channeltype == "direct-tcpip" {
 		d := logTunnelForwardData{}
-		if err := gossh.Unmarshal(newChan.ExtraData(), &d); err != nil {
+		if err := ssh.Unmarshal(newChan.ExtraData(), &d); err != nil {
 			return err
 		}
 		wrappedlch := newLogTunnel(lch, logWriter, d.SourceHost)

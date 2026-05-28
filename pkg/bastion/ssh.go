@@ -11,8 +11,8 @@ import (
 	"github.com/alterway/sshportal/pkg/crypto"
 	"github.com/alterway/sshportal/pkg/dbmodels"
 
-	"github.com/gliderlabs/ssh"
-	gossh "golang.org/x/crypto/ssh"
+	gliderssh "github.com/gliderlabs/ssh"
+	ssh "golang.org/x/crypto/ssh"
 	"gorm.io/gorm"
 )
 
@@ -59,8 +59,8 @@ func (c authContext) userType() userType {
 	}
 }
 
-func dynamicHostKey(db *gorm.DB, host *dbmodels.Host) gossh.HostKeyCallback {
-	return func(hostname string, remote net.Addr, key gossh.PublicKey) error {
+func dynamicHostKey(db *gorm.DB, host *dbmodels.Host) ssh.HostKeyCallback {
+	return func(hostname string, remote net.Addr, key ssh.PublicKey) error {
 		if len(host.HostKey) == 0 {
 			log.Println("Discovering host fingerprint...")
 			return db.Model(host).Update("HostKey", key.Marshal()).Error
@@ -73,15 +73,15 @@ func dynamicHostKey(db *gorm.DB, host *dbmodels.Host) gossh.HostKeyCallback {
 	}
 }
 
-var DefaultChannelHandler ssh.ChannelHandler = func(srv *ssh.Server, conn *gossh.ServerConn, newChan gossh.NewChannel, ctx ssh.Context) {}
+var DefaultChannelHandler gliderssh.ChannelHandler = func(srv *gliderssh.Server, conn *ssh.ServerConn, newChan ssh.NewChannel, ctx gliderssh.Context) {}
 
-func ChannelHandler(srv *ssh.Server, conn *gossh.ServerConn, newChan gossh.NewChannel, ctx ssh.Context) {
+func ChannelHandler(srv *gliderssh.Server, conn *ssh.ServerConn, newChan ssh.NewChannel, ctx gliderssh.Context) {
 	switch newChan.ChannelType() {
 	case "session":
 	case "direct-tcpip":
 	default:
 		// TODO: handle direct-tcp (only for ssh scheme)
-		if err := newChan.Reject(gossh.UnknownChannelType, "unsupported channel type"); err != nil {
+		if err := newChan.Reject(ssh.UnknownChannelType, "unsupported channel type"); err != nil {
 			log.Printf("error: failed to reject channel: %v", err)
 		}
 		return
@@ -200,7 +200,7 @@ func ChannelHandler(srv *ssh.Server, conn *gossh.ServerConn, newChan gossh.NewCh
 	}
 }
 
-func bastionClientConfig(ctx ssh.Context, host *dbmodels.Host) (*gossh.ClientConfig, error) {
+func bastionClientConfig(ctx gliderssh.Context, host *dbmodels.Host) (*ssh.ClientConfig, error) {
 	actx := ctx.Value(authContextKey).(*authContext)
 
 	if err := crypto.DecryptField(actx.aesKey, &host.Password); err != nil {
@@ -239,7 +239,7 @@ func bastionClientConfig(ctx ssh.Context, host *dbmodels.Host) (*gossh.ClientCon
 	return clientConfig, nil
 }
 
-func ShellHandler(s ssh.Session, version, gitSha, gitTag string) {
+func ShellHandler(s gliderssh.Session, version, gitSha, gitTag string) {
 	actx := s.Context().Value(authContextKey).(*authContext)
 	if actx.userType() != userTypeHealthcheck {
 		log.Printf("New connection(shell): sshUser=%q remote=%q local=%q command=%q dbUser=id:%d,email:%s", s.User(), s.RemoteAddr(), s.LocalAddr(), s.Command(), actx.user.ID, actx.user.Email)
@@ -272,8 +272,8 @@ func ShellHandler(s ssh.Session, version, gitSha, gitTag string) {
 	panic("should not happen")
 }
 
-func PasswordAuthHandler(db *gorm.DB, logsLocation, aclCheckCmd, aesKey, dbDriver, dbURL, bindAddr string, demo bool) ssh.PasswordHandler {
-	return func(ctx ssh.Context, pass string) bool {
+func PasswordAuthHandler(db *gorm.DB, logsLocation, aclCheckCmd, aesKey, dbDriver, dbURL, bindAddr string, demo bool) gliderssh.PasswordHandler {
+	return func(ctx gliderssh.Context, pass string) bool {
 		actx := &authContext{
 			db:            db,
 			inputUsername: ctx.User(),
@@ -292,8 +292,8 @@ func PasswordAuthHandler(db *gorm.DB, logsLocation, aclCheckCmd, aesKey, dbDrive
 	}
 }
 
-func PrivateKeyFromDB(db *gorm.DB, aesKey string) func(*ssh.Server) error {
-	return func(srv *ssh.Server) error {
+func PrivateKeyFromDB(db *gorm.DB, aesKey string) func(*gliderssh.Server) error {
+	return func(srv *gliderssh.Server) error {
 		var key dbmodels.SSHKey
 		if err := dbmodels.SSHKeysByIdentifiers(db, []string{"host"}).First(&key).Error; err != nil {
 			return err
@@ -303,7 +303,7 @@ func PrivateKeyFromDB(db *gorm.DB, aesKey string) func(*ssh.Server) error {
 			return fmt.Errorf("can't decrypt '%s' private Key: %v", key.Name, err)
 		}
 
-		signer, err := gossh.ParsePrivateKey([]byte(key.PrivKey))
+		signer, err := ssh.ParsePrivateKey([]byte(key.PrivKey))
 		if err != nil {
 			log.Printf("error: key seems encrypted but incorrect --aes-key has been provided")
 			return fmt.Errorf("can't parse '%s' private Key: %v", key.Name, err)
@@ -313,8 +313,8 @@ func PrivateKeyFromDB(db *gorm.DB, aesKey string) func(*ssh.Server) error {
 	}
 }
 
-func PublicKeyAuthHandler(db *gorm.DB, logsLocation, aclCheckCmd, aesKey, dbDriver, dbURL, bindAddr string, demo bool) ssh.PublicKeyHandler {
-	return func(ctx ssh.Context, key ssh.PublicKey) bool {
+func PublicKeyAuthHandler(db *gorm.DB, logsLocation, aclCheckCmd, aesKey, dbDriver, dbURL, bindAddr string, demo bool) gliderssh.PublicKeyHandler {
+	return func(ctx gliderssh.Context, key gliderssh.PublicKey) bool {
 		actx := &authContext{
 			db:            db,
 			inputUsername: ctx.User(),
@@ -331,7 +331,7 @@ func PublicKeyAuthHandler(db *gorm.DB, logsLocation, aclCheckCmd, aesKey, dbDriv
 		ctx.SetValue(authContextKey, actx)
 
 		// lookup user by key
-		db.Where("authorized_key = ?", string(gossh.MarshalAuthorizedKey(key))).First(&actx.userKey)
+		db.Where("authorized_key = ?", string(ssh.MarshalAuthorizedKey(key))).First(&actx.userKey)
 		if actx.userKey.UserID > 0 {
 			db.Preload("Roles").Where("id = ?", actx.userKey.UserID).First(&actx.user)
 			if actx.userType() == userTypeInvite {
@@ -364,7 +364,7 @@ func PublicKeyAuthHandler(db *gorm.DB, logsLocation, aclCheckCmd, aesKey, dbDriv
 					UserID:        actx.user.ID,
 					Key:           key.Marshal(),
 					Comment:       "created by sshportal",
-					AuthorizedKey: string(gossh.MarshalAuthorizedKey(key)),
+					AuthorizedKey: string(ssh.MarshalAuthorizedKey(key)),
 				}
 				db.Create(&actx.userKey)
 

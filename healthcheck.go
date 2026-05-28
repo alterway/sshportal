@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/urfave/cli/v3"
-	gossh "golang.org/x/crypto/ssh"
+	"golang.org/x/crypto/ssh"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 )
@@ -30,15 +30,15 @@ func healthcheck(c *serverConfig, addr string, wait, quiet bool) error {
 		return fmt.Errorf("healthcheck: %v", err)
 	}
 
-	pubKey, _, _, _, err := gossh.ParseAuthorizedKey([]byte(hostKey)) //nolint:dogsled
+	pubKey, _, _, _, err := ssh.ParseAuthorizedKey([]byte(hostKey)) //nolint:dogsled
 	if err != nil {
 		return fmt.Errorf("healthcheck: %v", err)
 	}
 
-	cfg := gossh.ClientConfig{
+	cfg := ssh.ClientConfig{
 		User:            "healthcheck",
-		HostKeyCallback: gossh.FixedHostKey(pubKey),
-		Auth:            []gossh.AuthMethod{gossh.Password("healthcheck")},
+		HostKeyCallback: ssh.FixedHostKey(pubKey),
+		Auth:            []ssh.AuthMethod{ssh.Password("healthcheck")},
 	}
 
 	if wait {
@@ -63,8 +63,8 @@ func healthcheck(c *serverConfig, addr string, wait, quiet bool) error {
 	return nil
 }
 
-func healthcheckOnce(addr string, config gossh.ClientConfig, quiet bool) error {
-	client, err := gossh.Dial("tcp", addr, &config)
+func healthcheckOnce(addr string, config ssh.ClientConfig, quiet bool) error {
+	client, err := ssh.Dial("tcp", addr, &config)
 	if err != nil {
 		return err
 	}

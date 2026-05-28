@@ -16,9 +16,9 @@ import (
 
 	"github.com/alterway/sshportal/pkg/bastion"
 
-	"github.com/gliderlabs/ssh"
+	gliderssh "github.com/gliderlabs/ssh"
 	"github.com/urfave/cli/v3"
-	gossh "golang.org/x/crypto/ssh"
+	"golang.org/x/crypto/ssh"
 )
 
 type serverConfig struct {
@@ -113,24 +113,24 @@ func server(c *serverConfig) (err error) {
 	}
 
 	// configure server
-	srv := &ssh.Server{
+	srv := &gliderssh.Server{
 		Addr:    c.bindAddr,
-		Handler: func(s ssh.Session) { bastion.ShellHandler(s, GitTag, GitSha, GitTag) }, // ssh.Server.Handler is the handler for the DefaultSessionHandler
+		Handler: func(s gliderssh.Session) { bastion.ShellHandler(s, GitTag, GitSha, GitTag) }, // gliderssh.Server.Handler is the handler for the DefaultSessionHandler
 		Version: "sshportal",
-		ChannelHandlers: map[string]ssh.ChannelHandler{
+		ChannelHandlers: map[string]gliderssh.ChannelHandler{
 			"default": bastion.ChannelHandler,
 		},
 	}
 
 	// configure channel handler
-	bastion.DefaultChannelHandler = func(srv *ssh.Server, conn *gossh.ServerConn, newChan gossh.NewChannel, ctx ssh.Context) {
+	bastion.DefaultChannelHandler = func(srv *gliderssh.Server, conn *ssh.ServerConn, newChan ssh.NewChannel, ctx gliderssh.Context) {
 		switch newChan.ChannelType() {
 		case "session":
-			go ssh.DefaultSessionHandler(srv, conn, newChan, ctx)
+			go gliderssh.DefaultSessionHandler(srv, conn, newChan, ctx)
 		case "direct-tcpip":
-			go ssh.DirectTCPIPHandler(srv, conn, newChan, ctx)
+			go gliderssh.DirectTCPIPHandler(srv, conn, newChan, ctx)
 		default:
-			if err := newChan.Reject(gossh.UnknownChannelType, "unsupported channel type"); err != nil {
+			if err := newChan.Reject(ssh.UnknownChannelType, "unsupported channel type"); err != nil {
 				log.Printf("failed to reject chan: %v", err)
 			}
 		}
@@ -143,10 +143,10 @@ func server(c *serverConfig) (err error) {
 		srv.MaxTimeout = math.MaxInt64
 	}
 
-	for _, opt := range []ssh.Option{
+	for _, opt := range []gliderssh.Option{
 		// custom PublicKeyAuth handler
-		ssh.PublicKeyAuth(bastion.PublicKeyAuthHandler(db, c.logsLocation, c.aclCheckCmd, c.aesKey, c.dbDriver, c.dbURL, c.bindAddr, c.demo)),
-		ssh.PasswordAuth(bastion.PasswordAuthHandler(db, c.logsLocation, c.aclCheckCmd, c.aesKey, c.dbDriver, c.dbURL, c.bindAddr, c.demo)),
+		gliderssh.PublicKeyAuth(bastion.PublicKeyAuthHandler(db, c.logsLocation, c.aclCheckCmd, c.aesKey, c.dbDriver, c.dbURL, c.bindAddr, c.demo)),
+		gliderssh.PasswordAuth(bastion.PasswordAuthHandler(db, c.logsLocation, c.aclCheckCmd, c.aesKey, c.dbDriver, c.dbURL, c.bindAddr, c.demo)),
 		// retrieve sshportal SSH private key from database
 		bastion.PrivateKeyFromDB(db, c.aesKey),
 	} {

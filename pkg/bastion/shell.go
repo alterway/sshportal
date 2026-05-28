@@ -18,11 +18,11 @@ import (
 	"github.com/alterway/sshportal/pkg/utils"
 
 	"github.com/asaskevich/govalidator/v12"
-	"github.com/gliderlabs/ssh"
+	gliderssh "github.com/gliderlabs/ssh"
 	"github.com/olekukonko/tablewriter"
 	"github.com/olekukonko/tablewriter/tw"
 	"github.com/urfave/cli/v3"
-	gossh "golang.org/x/crypto/ssh"
+	"golang.org/x/crypto/ssh"
 	"golang.org/x/crypto/ssh/terminal" // nolint:staticcheck
 )
 
@@ -59,7 +59,7 @@ const (
 	UserAdminName    = "admin"
 )
 
-func shell(s ssh.Session, version, gitSha, gitTag string) error {
+func shell(s gliderssh.Session, version, gitSha, gitTag string) error {
 	var (
 		sshCommand = s.Command()
 		actx       = s.Context().Value(authContextKey).(*authContext)
@@ -2228,7 +2228,7 @@ func shell(s ssh.Session, version, gitSha, gitTag string) error {
 								return errReadline
 							}
 							if text != "" && text != "\n" {
-								key, comment, _, _, err := gossh.ParseAuthorizedKey([]byte(text))
+								key, comment, _, _, err := ssh.ParseAuthorizedKey([]byte(text))
 								if err != nil {
 									return err
 								}
@@ -2237,7 +2237,7 @@ func shell(s ssh.Session, version, gitSha, gitTag string) error {
 									User:          &user,
 									Key:           key.Marshal(),
 									Comment:       comment,
-									AuthorizedKey: string(gossh.MarshalAuthorizedKey(key)),
+									AuthorizedKey: string(ssh.MarshalAuthorizedKey(key)),
 								}
 								if cmd.String(FlagCommentName) != "" {
 									userkey.Comment = cmd.String(FlagCommentName)
@@ -2330,7 +2330,7 @@ func shell(s ssh.Session, version, gitSha, gitTag string) error {
 								email = userkey.User.Email
 							}
 
-							pubUserkey, err := gossh.ParsePublicKey(userkey.Key)
+							pubUserkey, err := ssh.ParsePublicKey(userkey.Key)
 							if err != nil {
 								return err
 							}
@@ -2342,7 +2342,7 @@ func shell(s ssh.Session, version, gitSha, gitTag string) error {
 								utils.Time(userkey.UpdatedAt),
 								utils.Time(userkey.CreatedAt),
 								userkey.Comment,
-								gossh.FingerprintSHA256(pubUserkey),
+								ssh.FingerprintSHA256(pubUserkey),
 							); err != nil {
 								return fmt.Errorf("can't add data to the row: %v", err)
 							}

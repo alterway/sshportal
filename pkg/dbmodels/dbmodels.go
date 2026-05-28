@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	gossh "golang.org/x/crypto/ssh"
+	"golang.org/x/crypto/ssh"
 	"gorm.io/gorm"
 )
 
@@ -297,21 +297,21 @@ func HostByName(db *gorm.DB, name string) (*Host, error) {
 	return &host, nil
 }
 
-func (host *Host) ClientConfig(hk gossh.HostKeyCallback) (*gossh.ClientConfig, error) {
-	config := gossh.ClientConfig{
+func (host *Host) ClientConfig(hk ssh.HostKeyCallback) (*ssh.ClientConfig, error) {
+	config := ssh.ClientConfig{
 		User:            host.Username(),
 		HostKeyCallback: hk,
-		Auth:            []gossh.AuthMethod{},
+		Auth:            []ssh.AuthMethod{},
 	}
 	if host.SSHKey != nil {
-		signer, err := gossh.ParsePrivateKey([]byte(host.SSHKey.PrivKey))
+		signer, err := ssh.ParsePrivateKey([]byte(host.SSHKey.PrivKey))
 		if err != nil {
 			return nil, err
 		}
-		config.Auth = append(config.Auth, gossh.PublicKeys(signer))
+		config.Auth = append(config.Auth, ssh.PublicKeys(signer))
 	}
 	if host.Passwd() != "" {
-		config.Auth = append(config.Auth, gossh.Password(host.Passwd()))
+		config.Auth = append(config.Auth, ssh.Password(host.Passwd()))
 	}
 	if len(config.Auth) == 0 {
 		return nil, fmt.Errorf("no valid authentication method for host %q", host.Name)

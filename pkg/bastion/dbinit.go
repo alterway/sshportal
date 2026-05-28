@@ -15,7 +15,7 @@ import (
 	"github.com/alterway/sshportal/pkg/dbmodels"
 
 	gormigrate "github.com/go-gormigrate/gormigrate/v2"
-	gossh "golang.org/x/crypto/ssh"
+	"golang.org/x/crypto/ssh"
 	"gorm.io/gorm"
 )
 
@@ -380,11 +380,11 @@ func DBInit(db *gorm.DB, aesKey string) error {
 				}
 
 				for _, userKey := range userKeys {
-					key, err := gossh.ParsePublicKey(userKey.Key)
+					key, err := ssh.ParsePublicKey(userKey.Key)
 					if err != nil {
 						return err
 					}
-					userKey.AuthorizedKey = string(gossh.MarshalAuthorizedKey(key))
+					userKey.AuthorizedKey = string(ssh.MarshalAuthorizedKey(key))
 					if err := db.Model(userKey).Updates(userKey).Error; err != nil {
 						return err
 					}
@@ -754,7 +754,7 @@ func MigrateToGCMCipher(db *gorm.DB, aesKey string) error {
 			// Wrong AES key has been provided but we ignore the error here because
 			// we don't want SSHportal to crash now.
 			// It will be catched by PrivateKeyFromDB() later
-			if _, err := gossh.ParsePrivateKey([]byte(keyDecryptedWithCfb)); err != nil {
+			if _, err := ssh.ParsePrivateKey([]byte(keyDecryptedWithCfb)); err != nil {
 				log.Printf("warn(MigrateToGCMCipher): %s key can't be decrypted with provided --aes-key ", k.Name)
 				log.Printf("warn(MigrateToGCMCipher): re-encryption aborted")
 				return nil

@@ -13,13 +13,13 @@ import (
 	"unsafe"
 
 	"github.com/creack/pty"
-	"github.com/gliderlabs/ssh"
+	gliderssh "github.com/gliderlabs/ssh"
 	"github.com/urfave/cli/v3"
 )
 
 // testServer is an hidden handler used for integration tests
 func testServer(_ context.Context, _ *cli.Command) error {
-	ssh.Handle(func(s ssh.Session) {
+	gliderssh.Handle(func(s gliderssh.Session) {
 		helloMsg := struct {
 			User    string
 			Environ []string
@@ -77,5 +77,5 @@ func testServer(_ context.Context, _ *cli.Command) error {
 	})
 
 	log.Println("starting ssh server on port 2222...")
-	return ssh.ListenAndServe(":2222", nil)
+	return gliderssh.ListenAndServe(":2222", nil)
 }
