@@ -17,7 +17,6 @@ import (
 	"github.com/alterway/sshportal/pkg/dbmodels"
 	"github.com/alterway/sshportal/pkg/utils"
 
-	shlex "github.com/anmitsu/go-shlex"
 	"github.com/asaskevich/govalidator/v12"
 	"github.com/gliderlabs/ssh"
 	"github.com/olekukonko/tablewriter"
@@ -2538,7 +2537,7 @@ func shell(s ssh.Session, version, gitSha, gitTag string) error {
 				return err
 			}
 
-			words, err := shlex.Split(line, true)
+			words, err := utils.SplitPosix(line)
 			if err != nil {
 				fmt.Fprint(s, "syntax error.\n")
 				continue

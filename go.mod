@@ -1,7 +1,6 @@
 module github.com/alterway/sshportal
 
 require (
-	github.com/anmitsu/go-shlex v0.0.0-20200514113438-38f4b401e2be
 	github.com/asaskevich/govalidator/v12 v12.0.0
 	github.com/creack/pty v1.1.24
 	github.com/gliderlabs/ssh v0.3.8
@@ -18,6 +17,7 @@ require (
 
 require (
 	filippo.io/edwards25519 v1.1.1 // indirect
+	github.com/anmitsu/go-shlex v0.0.0-20200514113438-38f4b401e2be // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/clipperhouse/displaywidth v0.10.0 // indirect
 	github.com/clipperhouse/uax29/v2 v2.6.0 // indirect
