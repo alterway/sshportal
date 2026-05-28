@@ -195,7 +195,7 @@ Demo gif:
 
 ### Features and limitations
 
-* Single autonomous portable binary (~25Mb) with zero runtime dependency (fully static with musl)
+* Single autonomous portable binary (< 20MB) with zero runtime dependency (fully static with musl)
 * Portable / Cross-platform (regularly tested on linux and OSX/darwin)
 * Store data in Sqlite, Mariadb or PostgreSQL
 * Stateless -> horizontally scalable when using Mariadb or PostgreSQL as the backend
@@ -227,8 +227,6 @@ Demo gif:
   * [`X11 forwarding`](http://en.tldp.org/HOWTO/XDMCP-HOWTO/ssh.html) support
   * Git support (can be used to easily use multiple user keys on GitHub, or access your own firewalled gitlab server)
   * Do not require any SSH client modification or custom `.ssh/config`, works with every tested SSH programming libraries and every tested SSH clients
-* SSH to non-SSH proxy
-  * [Telnet](https://www.ssh.com/ssh/telnet) support
 
 **(Known) limitations**
 

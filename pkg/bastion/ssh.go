@@ -186,12 +186,6 @@ func ChannelHandler(srv *ssh.Server, conn *gossh.ServerConn, newChan gossh.NewCh
 				}
 				actx.db.Model(&sess).Updates(&sessUpdate)
 			}()
-		case dbmodels.BastionSchemeTelnet:
-			tmpSrv := ssh.Server{
-				// PtyCallback: srv.PtyCallback,
-				Handler: telnetHandler(host),
-			}
-			DefaultChannelHandler(&tmpSrv, conn, newChan, ctx)
 		default:
 			ch, _, err2 := newChan.Accept()
 			if err2 != nil {

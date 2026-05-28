@@ -163,8 +163,7 @@ const (
 type BastionScheme string
 
 const (
-	BastionSchemeSSH    BastionScheme = "ssh"
-	BastionSchemeTelnet BastionScheme = "telnet"
+	BastionSchemeSSH BastionScheme = "ssh"
 )
 
 // Generic Helper
@@ -278,8 +277,6 @@ defaultPort:
 	switch host.Scheme() {
 	case BastionSchemeSSH:
 		return 22
-	case BastionSchemeTelnet:
-		return 23
 	default:
 		return 0
 	}

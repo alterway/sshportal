@@ -7,8 +7,6 @@ require (
 	github.com/gliderlabs/ssh v0.3.8
 	github.com/go-gormigrate/gormigrate/v2 v2.1.5
 	github.com/olekukonko/tablewriter v1.1.4
-	github.com/reiver/go-oi v1.0.0
-	github.com/reiver/go-telnet v0.0.0-20250617105250-7da9ad70a2b2
 	github.com/urfave/cli/v3 v3.9.0
 	golang.org/x/crypto v0.52.0
 	golang.org/x/tools v0.45.0
