@@ -19,7 +19,6 @@ import (
 
 	shlex "github.com/anmitsu/go-shlex"
 	"github.com/asaskevich/govalidator/v12"
-	humanize "github.com/dustin/go-humanize"
 	"github.com/gliderlabs/ssh"
 	"github.com/olekukonko/tablewriter"
 	"github.com/olekukonko/tablewriter/tw"
@@ -267,8 +266,8 @@ func shell(s ssh.Session, version, gitSha, gitTag string) error {
 								acl.Action,
 								inception,
 								expiration,
-								humanize.Time(acl.UpdatedAt),
-								humanize.Time(acl.CreatedAt),
+								utils.Time(acl.UpdatedAt),
+								utils.Time(acl.CreatedAt),
 								acl.Comment,
 							); err != nil {
 								return fmt.Errorf("can't add data to the row: %v", err)
@@ -743,7 +742,7 @@ func shell(s ssh.Session, version, gitSha, gitTag string) error {
 								event.Action,
 								event.Entity,
 								wrapText(string(event.Args), 30),
-								humanize.Time(event.CreatedAt),
+								utils.Time(event.CreatedAt),
 							); err != nil {
 								return fmt.Errorf("can't add data to the row: %v", err)
 							}
@@ -976,8 +975,8 @@ func shell(s ssh.Session, version, gitSha, gitTag string) error {
 								host.String(),
 								authKey,
 								strings.Join(groupNames, ", "),
-								humanize.Time(host.UpdatedAt),
-								humanize.Time(host.CreatedAt),
+								utils.Time(host.UpdatedAt),
+								utils.Time(host.CreatedAt),
 								host.Comment,
 								hop,
 								host.Logging,
@@ -1255,8 +1254,8 @@ func shell(s ssh.Session, version, gitSha, gitTag string) error {
 								hostGroup.Name,
 								fmt.Sprintf("%d", len(hostGroup.Hosts)),
 								fmt.Sprintf("%d", len(hostGroup.ACLs)),
-								humanize.Time(hostGroup.UpdatedAt),
-								humanize.Time(hostGroup.CreatedAt),
+								utils.Time(hostGroup.UpdatedAt),
+								utils.Time(hostGroup.CreatedAt),
 								hostGroup.Comment,
 							); err != nil {
 								return fmt.Errorf("can't add data to the row: %v", err)
@@ -1580,8 +1579,8 @@ func shell(s ssh.Session, version, gitSha, gitTag string) error {
 								key.Type,
 								fmt.Sprintf("%d", key.Length),
 								fmt.Sprintf("%d", len(key.Hosts)),
-								humanize.Time(key.UpdatedAt),
-								humanize.Time(key.CreatedAt),
+								utils.Time(key.UpdatedAt),
+								utils.Time(key.CreatedAt),
 								key.Comment,
 								//FIXME: add some stats
 							); err != nil {
@@ -1856,8 +1855,8 @@ func shell(s ssh.Session, version, gitSha, gitTag string) error {
 								strings.Join(roleNames, ", "),
 								fmt.Sprintf("%d", len(user.Keys)),
 								strings.Join(groupNames, ", "),
-								humanize.Time(user.UpdatedAt),
-								humanize.Time(user.CreatedAt),
+								utils.Time(user.UpdatedAt),
+								utils.Time(user.CreatedAt),
 								user.Comment,
 								user.InviteToken,
 							); err != nil {
@@ -2113,8 +2112,8 @@ func shell(s ssh.Session, version, gitSha, gitTag string) error {
 								userGroup.Name,
 								fmt.Sprintf("%d", len(userGroup.Users)),
 								fmt.Sprintf("%d", len(userGroup.ACLs)),
-								humanize.Time(userGroup.UpdatedAt),
-								humanize.Time(userGroup.CreatedAt),
+								utils.Time(userGroup.UpdatedAt),
+								utils.Time(userGroup.CreatedAt),
 								userGroup.Comment,
 							); err != nil {
 								return fmt.Errorf("can't add data to the row: %v", err)
@@ -2341,8 +2340,8 @@ func shell(s ssh.Session, version, gitSha, gitTag string) error {
 								fmt.Sprintf("%d", userkey.ID),
 								email,
 								// FIXME: add fingerprint
-								humanize.Time(userkey.UpdatedAt),
-								humanize.Time(userkey.CreatedAt),
+								utils.Time(userkey.UpdatedAt),
+								utils.Time(userkey.CreatedAt),
 								userkey.Comment,
 								gossh.FingerprintSHA256(pubUserkey),
 							); err != nil {
@@ -2482,9 +2481,9 @@ func shell(s ssh.Session, version, gitSha, gitTag string) error {
 						for _, session := range sessions {
 							var duration string
 							if session.StoppedAt == nil || session.StoppedAt.IsZero() {
-								duration = humanize.RelTime(session.CreatedAt, time.Now(), "", "")
+								duration = utils.RelTime(session.CreatedAt, time.Now(), "", "")
 							} else {
-								duration = humanize.RelTime(session.CreatedAt, *session.StoppedAt, "", "")
+								duration = utils.RelTime(session.CreatedAt, *session.StoppedAt, "", "")
 							}
 							duration = strings.Replace(duration, "now", "1 second", 1)
 							hostname := naMessage
@@ -2500,7 +2499,7 @@ func shell(s ssh.Session, version, gitSha, gitTag string) error {
 								username,
 								hostname,
 								session.Status,
-								humanize.Time(session.CreatedAt),
+								utils.Time(session.CreatedAt),
 								duration,
 								wrapText(session.ErrMsg, 30),
 								session.Comment,
