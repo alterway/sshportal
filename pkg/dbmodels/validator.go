@@ -3,7 +3,7 @@ package dbmodels
 import (
 	"regexp"
 
-	"github.com/asaskevich/govalidator"
+	"github.com/asaskevich/govalidator/v12"
 )
 
 func InitValidator() {

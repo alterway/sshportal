@@ -18,7 +18,7 @@ import (
 	"github.com/alterway/sshportal/pkg/utils"
 
 	shlex "github.com/anmitsu/go-shlex"
-	"github.com/asaskevich/govalidator"
+	"github.com/asaskevich/govalidator/v12"
 	humanize "github.com/dustin/go-humanize"
 	"github.com/gliderlabs/ssh"
 	"github.com/olekukonko/tablewriter"
