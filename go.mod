@@ -4,7 +4,7 @@ require (
 	github.com/asaskevich/govalidator/v12 v12.0.0
 	github.com/creack/pty v1.1.24
 	github.com/gliderlabs/ssh v0.3.8
-	github.com/go-gormigrate/gormigrate/v2 v2.1.5
+	github.com/go-gormigrate/gormigrate/v2 v2.1.6
 	github.com/olekukonko/tablewriter v1.1.4
 	github.com/urfave/cli/v3 v3.9.0
 	golang.org/x/crypto v0.52.0
