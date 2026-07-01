@@ -6,13 +6,13 @@ require (
 	github.com/gliderlabs/ssh v0.3.8
 	github.com/go-gormigrate/gormigrate/v2 v2.1.6
 	github.com/olekukonko/tablewriter v1.1.4
-	github.com/urfave/cli/v3 v3.9.1
+	github.com/urfave/cli/v3 v3.10.1
 	golang.org/x/crypto v0.53.0
-	golang.org/x/tools v0.46.0
+	golang.org/x/tools v0.47.0
 	gorm.io/driver/mysql v1.6.0
 	gorm.io/driver/postgres v1.6.0
 	gorm.io/driver/sqlite v1.6.0
-	gorm.io/gorm v1.31.1
+	gorm.io/gorm v1.31.2
 )
 
 require (
