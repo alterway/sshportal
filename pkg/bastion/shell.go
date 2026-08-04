@@ -18,7 +18,7 @@ import (
 	"github.com/alterway/sshportal/pkg/utils"
 
 	"github.com/asaskevich/govalidator/v12"
-	gliderssh "github.com/gliderlabs/ssh"
+	gliderssh "github.com/libvoid/gliderssh"
 	"github.com/olekukonko/tablewriter"
 	"github.com/olekukonko/tablewriter/tw"
 	"github.com/urfave/cli/v3"

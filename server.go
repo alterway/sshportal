@@ -16,7 +16,7 @@ import (
 
 	"github.com/alterway/sshportal/pkg/bastion"
 
-	gliderssh "github.com/gliderlabs/ssh"
+	gliderssh "github.com/libvoid/gliderssh"
 	"github.com/urfave/cli/v3"
 	"golang.org/x/crypto/ssh"
 )

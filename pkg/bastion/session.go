@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"time"
 
-	gliderssh "github.com/gliderlabs/ssh"
+	gliderssh "github.com/libvoid/gliderssh"
 	"golang.org/x/crypto/ssh"
 )
 
