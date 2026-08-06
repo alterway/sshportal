@@ -85,8 +85,7 @@ func server(c *serverConfig) (err error) {
 	// configure db logging
 
 	db, _ := dbConnect(c, &gorm.Config{
-		DisableForeignKeyConstraintWhenMigrating: true,
-		Logger:                                   logger.Default.LogMode(logger.Silent),
+		Logger: logger.Default.LogMode(logger.Silent),
 	})
 	sqlDB, err := db.DB()
 
