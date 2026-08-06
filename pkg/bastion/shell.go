@@ -994,7 +994,7 @@ func shell(s gliderssh.Session, version, gitSha, gitTag string) error {
 							authKey := ""
 							if host.SSHKeyID > 0 {
 								var key dbmodels.SSHKey
-								if err := db.Model(host).Association("SSHKey").Find(&key); err != nil {
+								if err := db.Model(&host).Association("SSHKey").Find(&key); err != nil {
 									return err
 								}
 								authKey = key.Name
@@ -1006,7 +1006,7 @@ func shell(s gliderssh.Session, version, gitSha, gitTag string) error {
 							var hop string
 							if host.HopID != 0 {
 								var hopHost dbmodels.Host
-								if err := db.Model(host).Association("Hop").Find(&hopHost); err != nil {
+								if err := db.Model(&host).Association("Hop").Find(&hopHost); err != nil {
 									return err
 								}
 								hop = hopHost.Name
@@ -1099,7 +1099,7 @@ func shell(s gliderssh.Session, version, gitSha, gitTag string) error {
 
 							// Host key
 							if cmd.Bool("reset") {
-								if err := db.Model(host).Update("HostKey", nil).Error; err != nil {
+								if err := model.Update("HostKey", nil).Error; err != nil {
 									tx.Rollback()
 									return err
 								}
@@ -2008,7 +2008,7 @@ func shell(s gliderssh.Session, version, gitSha, gitTag string) error {
 
 						tx := db.Begin()
 						for _, user := range users {
-							model := tx.Model(user)
+							model := tx.Model(&user)
 							// simple fields
 							for _, fieldname := range []string{"name", "email", FlagCommentName} {
 								if cmd.String(fieldname) != "" {
@@ -2051,7 +2051,7 @@ func shell(s gliderssh.Session, version, gitSha, gitTag string) error {
 								return err
 							}
 
-							groups := tx.Model(user).Association("Groups")
+							groups := tx.Model(&user).Association("Groups")
 
 							if err := groups.Append(&appendGroups); err != nil {
 								tx.Rollback()
@@ -2074,7 +2074,7 @@ func shell(s gliderssh.Session, version, gitSha, gitTag string) error {
 								return err
 							}
 
-							roles := tx.Model(user).Association("Roles")
+							roles := tx.Model(&user).Association("Roles")
 
 							if err := roles.Append(&appendRoles); err != nil {
 								tx.Rollback()
