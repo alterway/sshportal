@@ -328,8 +328,8 @@ func DBInit(db *gorm.DB, aesKey string) error {
 					Status    string         `valid:"required"`
 					User      *dbmodels.User `gorm:"ForeignKey:UserID"`
 					Host      *dbmodels.Host `gorm:"ForeignKey:HostID"`
-					UserID    uint           `valid:"optional"`
-					HostID    uint           `valid:"optional"`
+					UserID    uint           `valid:"optional" gorm:"default:NULL"`
+					HostID    uint           `valid:"optional" gorm:"default:NULL"`
 					ErrMsg    string         `valid:"optional"`
 					Comment   string         `valid:"optional"`
 				}
@@ -344,7 +344,7 @@ func DBInit(db *gorm.DB, aesKey string) error {
 				type Event struct {
 					gorm.Model
 					Author   *dbmodels.User `gorm:"ForeignKey:AuthorID"`
-					AuthorID uint           `valid:"optional"`
+					AuthorID uint           `valid:"optional" gorm:"default:NULL"`
 					Domain   string         `valid:"required"`
 					Action   string         `valid:"required"`
 					Entity   string         `valid:"optional"`
@@ -424,8 +424,8 @@ func DBInit(db *gorm.DB, aesKey string) error {
 					Status    string         `valid:"required"`
 					User      *dbmodels.User `gorm:"ForeignKey:UserID"`
 					Host      *dbmodels.Host `gorm:"ForeignKey:HostID"`
-					UserID    uint           `valid:"optional"`
-					HostID    uint           `valid:"optional"`
+					UserID    uint           `valid:"optional" gorm:"default:NULL"`
+					HostID    uint           `valid:"optional" gorm:"default:NULL"`
 					ErrMsg    string         `valid:"optional"`
 					Comment   string         `valid:"optional"`
 				}
@@ -491,7 +491,7 @@ func DBInit(db *gorm.DB, aesKey string) error {
 					Groups   []*dbmodels.HostGroup `gorm:"many2many:host_host_groups;"`
 					Comment  string
 					Hop      *dbmodels.Host
-					HopID    uint
+					HopID    uint `gorm:"default:NULL"`
 				}
 				return tx.AutoMigrate(&Host{})
 			},
@@ -515,7 +515,7 @@ func DBInit(db *gorm.DB, aesKey string) error {
 					Comment  string
 					Hop      *dbmodels.Host
 					Logging  string
-					HopID    uint
+					HopID    uint `gorm:"default:NULL"`
 				}
 				return tx.AutoMigrate(&Host{})
 			},
@@ -541,6 +541,27 @@ func DBInit(db *gorm.DB, aesKey string) error {
 					Expiration  *time.Time
 				}
 				return tx.AutoMigrate(&ACL{})
+			},
+			Rollback: func(tx *gorm.DB) error { return fmt.Errorf("not implemented") },
+		}, {
+			ID: "33",
+			Migrate: func(tx *gorm.DB) error {
+				if err := migrateToGormV2(tx); err != nil {
+					return err
+				}
+
+				// Use AutoMigrate to recreate them with CASCADE enabled
+				return tx.AutoMigrate(
+					&dbmodels.SSHKey{},
+					&dbmodels.Host{},
+					&dbmodels.UserKey{},
+					&dbmodels.User{},
+					&dbmodels.UserGroup{},
+					&dbmodels.HostGroup{},
+					&dbmodels.ACL{},
+					&dbmodels.Session{},
+					&dbmodels.Event{},
+				)
 			},
 			Rollback: func(tx *gorm.DB) error { return fmt.Errorf("not implemented") },
 		},
@@ -824,6 +845,113 @@ func MigrateToGCMCipher(db *gorm.DB, aesKey string) error {
 		log.Printf("error(MigrateToGCMCipher): %v", err)
 	} else {
 		log.Printf("info: CFB encrypted fields have been re-encrypted with AES-GCM")
+	}
+
+	return nil
+}
+
+func migrateToGormV2(db *gorm.DB) error {
+	migrator := db.Migrator()
+
+	type HostHostGroup struct {
+		HostID      uint `gorm:"primaryKey"`
+		HostGroupID uint `gorm:"primaryKey"`
+	}
+	type UserUserRole struct {
+		UserID     uint `gorm:"primaryKey"`
+		UserRoleID uint `gorm:"primaryKey"`
+	}
+	type UserUserGroup struct {
+		UserID      uint `gorm:"primaryKey"`
+		UserGroupID uint `gorm:"primaryKey"`
+	}
+	type UserGroupACL struct {
+		UserGroupID uint `gorm:"primaryKey"`
+		ACLID       uint `gorm:"primaryKey"`
+	}
+	type HostGroupACL struct {
+		HostGroupID uint `gorm:"primaryKey"`
+		ACLID       uint `gorm:"primaryKey"`
+	}
+
+	joinTables := []struct {
+		model     interface{}
+		fieldName string
+		joinModel interface{}
+	}{
+		{&dbmodels.Host{}, "Groups", &HostHostGroup{}},
+		{&dbmodels.UserRole{}, "Users", &UserUserRole{}},
+		{&dbmodels.UserGroup{}, "Users", &UserUserGroup{}},
+		{&dbmodels.UserGroup{}, "ACLs", &UserGroupACL{}},
+		{&dbmodels.HostGroup{}, "ACLs", &HostGroupACL{}},
+	}
+
+	for _, jt := range joinTables {
+		if err := db.SetupJoinTable(jt.model, jt.fieldName, jt.joinModel); err != nil {
+			return fmt.Errorf("prepareMySQLForV2: setup join table for %T.%s: %w", jt.model, jt.fieldName, err)
+		}
+	}
+
+	alterations := []struct {
+		model  interface{}
+		fields []string
+	}{
+		{&dbmodels.Setting{}, []string{"ID"}},
+		{&dbmodels.SSHKey{}, []string{"ID"}},
+		{&dbmodels.Host{}, []string{"ID", "SSHKeyID", "HopID"}},
+		{&dbmodels.UserKey{}, []string{"ID", "UserID"}},
+		{&dbmodels.UserRole{}, []string{"ID"}},
+		{&dbmodels.User{}, []string{"ID"}},
+		{&dbmodels.UserGroup{}, []string{"ID"}},
+		{&dbmodels.HostGroup{}, []string{"ID"}},
+		{&dbmodels.ACL{}, []string{"ID"}},
+		{&dbmodels.Session{}, []string{"ID", "UserID", "HostID"}},
+		{&dbmodels.Event{}, []string{"ID", "AuthorID"}},
+		{&HostHostGroup{}, []string{"HostID", "HostGroupID"}},
+		{&UserUserRole{}, []string{"UserID", "UserRoleID"}},
+		{&UserUserGroup{}, []string{"UserID", "UserGroupID"}},
+		{&UserGroupACL{}, []string{"UserGroupID", "ACLID"}},
+		{&HostGroupACL{}, []string{"HostGroupID", "ACLID"}},
+	}
+
+	for _, a := range alterations {
+		for _, field := range a.fields {
+			if err := migrator.AlterColumn(a.model, field); err != nil {
+				return fmt.Errorf("alter %T.%s failed: %w", a.model, field, err)
+			}
+		}
+	}
+
+	// Clean up orphaned records before creating foreign keys
+	cleanupStatements := []string{
+		"UPDATE hosts SET hop_id = NULL WHERE hop_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM hosts h2 WHERE h2.id = hosts.hop_id)",
+		"UPDATE hosts SET ssh_key_id = NULL WHERE ssh_key_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM ssh_keys WHERE ssh_keys.id = hosts.ssh_key_id)",
+		"UPDATE sessions SET user_id = NULL WHERE user_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM users WHERE users.id = sessions.user_id)",
+		"UPDATE sessions SET host_id = NULL WHERE host_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM hosts WHERE hosts.id = sessions.host_id)",
+		"UPDATE events SET author_id = NULL WHERE author_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM users WHERE users.id = events.author_id)",
+
+		"DELETE FROM user_keys WHERE NOT EXISTS (SELECT 1 FROM users WHERE users.id = user_keys.user_id)",
+
+		"DELETE FROM host_host_groups WHERE NOT EXISTS (SELECT 1 FROM hosts WHERE hosts.id = host_host_groups.host_id)",
+		"DELETE FROM host_host_groups WHERE NOT EXISTS (SELECT 1 FROM host_groups WHERE host_groups.id = host_host_groups.host_group_id)",
+
+		"DELETE FROM user_user_roles WHERE NOT EXISTS (SELECT 1 FROM users WHERE users.id = user_user_roles.user_id)",
+		"DELETE FROM user_user_roles WHERE NOT EXISTS (SELECT 1 FROM user_roles WHERE user_roles.id = user_user_roles.user_role_id)",
+
+		"DELETE FROM user_user_groups WHERE NOT EXISTS (SELECT 1 FROM users WHERE users.id = user_user_groups.user_id)",
+		"DELETE FROM user_user_groups WHERE NOT EXISTS (SELECT 1 FROM user_groups WHERE user_groups.id = user_user_groups.user_group_id)",
+
+		"DELETE FROM user_group_acls WHERE NOT EXISTS (SELECT 1 FROM user_groups WHERE user_groups.id = user_group_acls.user_group_id)",
+		"DELETE FROM user_group_acls WHERE NOT EXISTS (SELECT 1 FROM acls WHERE acls.id = user_group_acls.acl_id)",
+
+		"DELETE FROM host_group_acls WHERE NOT EXISTS (SELECT 1 FROM host_groups WHERE host_groups.id = host_group_acls.host_group_id)",
+		"DELETE FROM host_group_acls WHERE NOT EXISTS (SELECT 1 FROM acls WHERE acls.id = host_group_acls.acl_id)",
+	}
+
+	for _, stmt := range cleanupStatements {
+		if err := db.Exec(stmt).Error; err != nil {
+			log.Printf("warn: failed to clean orphaned records for mysql: %v", err)
+		}
 	}
 
 	return nil

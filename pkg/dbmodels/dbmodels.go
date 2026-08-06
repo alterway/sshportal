@@ -44,7 +44,7 @@ type SSHKey struct {
 	Fingerprint string  `valid:"optional"`
 	PrivKey     string  `sql:"size:5000" valid:"required"`
 	PubKey      string  `sql:"size:1000" valid:"optional"`
-	Hosts       []*Host `gorm:"ForeignKey:SSHKeyID"`
+	Hosts       []*Host `gorm:"ForeignKey:SSHKeyID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
 	Comment     string  `valid:"optional"`
 }
 
@@ -56,14 +56,14 @@ type Host struct {
 	User     string       `valid:"optional"` // FIXME: to be removed in a future version in favor of URL
 	Password string       `valid:"optional"` // FIXME: to be removed in a future version in favor of URL
 	URL      string       `valid:"optional"`
-	SSHKey   *SSHKey      `gorm:"ForeignKey:SSHKeyID"` // SSHKey used to connect by the client
-	SSHKeyID uint         `gorm:"index"`
+	SSHKey   *SSHKey      `gorm:"ForeignKey:SSHKeyID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"` // SSHKey used to connect by the client
+	SSHKeyID uint         `gorm:"index;default:NULL"`
 	HostKey  []byte       `sql:"size:1000" valid:"optional"`
-	Groups   []*HostGroup `gorm:"many2many:host_host_groups;"`
+	Groups   []*HostGroup `gorm:"many2many:host_host_groups;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 	Comment  string       `valid:"optional"`
 	Logging  string       `valid:"optional,host_logging_mode"`
-	Hop      *Host
-	HopID    uint
+	Hop      *Host        `gorm:"ForeignKey:HopID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
+	HopID    uint         `gorm:"default:NULL"`
 }
 
 // UserKey defines a user public key used by sshportal to identify the user
@@ -72,24 +72,24 @@ type UserKey struct {
 	Key           []byte `sql:"size:1000" valid:"length(1|1000)"`
 	AuthorizedKey string `sql:"size:1000" valid:"required,length(1|1000)"`
 	UserID        uint   ``
-	User          *User  `gorm:"ForeignKey:UserID"`
+	User          *User  `gorm:"ForeignKey:UserID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 	Comment       string `valid:"optional"`
 }
 
 type UserRole struct {
 	gorm.Model
 	Name  string  `valid:"required,length(1|255),unix_user"`
-	Users []*User `gorm:"many2many:user_user_roles"`
+	Users []*User `gorm:"many2many:user_user_roles;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 }
 
 type User struct {
 	// FIXME: use uuid for ID
 	gorm.Model
-	Roles       []*UserRole  `gorm:"many2many:user_user_roles"`
+	Roles       []*UserRole  `gorm:"many2many:user_user_roles;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 	Email       string       `valid:"required,email"`
 	Name        string       `valid:"required,length(1|255),unix_user" gorm:"index:uix_users_name,unique"`
-	Keys        []*UserKey   `gorm:"ForeignKey:UserID"`
-	Groups      []*UserGroup `gorm:"many2many:user_user_groups;"`
+	Keys        []*UserKey   `gorm:"ForeignKey:UserID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+	Groups      []*UserGroup `gorm:"many2many:user_user_groups;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 	Comment     string       `valid:"optional"`
 	InviteToken string       `valid:"optional,length(10|60)"`
 }
@@ -97,23 +97,23 @@ type User struct {
 type UserGroup struct {
 	gorm.Model
 	Name    string  `valid:"required,length(1|255),unix_user" gorm:"index:uix_usergroups_name,unique"`
-	Users   []*User `gorm:"many2many:user_user_groups;"`
-	ACLs    []*ACL  `gorm:"many2many:user_group_acls;"`
+	Users   []*User `gorm:"many2many:user_user_groups;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+	ACLs    []*ACL  `gorm:"many2many:user_group_acls;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 	Comment string  `valid:"optional"`
 }
 
 type HostGroup struct {
 	gorm.Model
 	Name    string  `valid:"required,length(1|255),unix_user" gorm:"index:uix_hostgroups_name,unique"`
-	Hosts   []*Host `gorm:"many2many:host_host_groups;"`
-	ACLs    []*ACL  `gorm:"many2many:host_group_acls;"`
+	Hosts   []*Host `gorm:"many2many:host_host_groups;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+	ACLs    []*ACL  `gorm:"many2many:host_group_acls;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 	Comment string  `valid:"optional"`
 }
 
 type ACL struct {
 	gorm.Model
-	HostGroups  []*HostGroup `gorm:"many2many:host_group_acls;"`
-	UserGroups  []*UserGroup `gorm:"many2many:user_group_acls;"`
+	HostGroups  []*HostGroup `gorm:"many2many:host_group_acls;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+	UserGroups  []*UserGroup `gorm:"many2many:user_group_acls;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 	HostPattern string       `valid:"optional"`
 	Action      string       `valid:"required"`
 	Weight      uint         ``
@@ -126,18 +126,18 @@ type Session struct {
 	gorm.Model
 	StoppedAt *time.Time `sql:"index" valid:"optional"`
 	Status    string     `valid:"required"`
-	User      *User      `gorm:"ForeignKey:UserID"`
-	Host      *Host      `gorm:"ForeignKey:HostID"`
-	UserID    uint       `valid:"optional"`
-	HostID    uint       `valid:"optional"`
+	User      *User      `gorm:"ForeignKey:UserID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
+	Host      *Host      `gorm:"ForeignKey:HostID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
+	UserID    uint       `valid:"optional" gorm:"default:NULL"`
+	HostID    uint       `valid:"optional" gorm:"default:NULL"`
 	ErrMsg    string     `valid:"optional"`
 	Comment   string     `valid:"optional"`
 }
 
 type Event struct {
 	gorm.Model
-	Author   *User                  `gorm:"ForeignKey:AuthorID"`
-	AuthorID uint                   `valid:"optional"`
+	Author   *User                  `gorm:"ForeignKey:AuthorID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
+	AuthorID uint                   `valid:"optional" gorm:"default:NULL"`
 	Domain   string                 `valid:"required"`
 	Action   string                 `valid:"required"`
 	Entity   string                 `valid:"optional"`
