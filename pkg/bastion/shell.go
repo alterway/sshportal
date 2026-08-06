@@ -24,6 +24,7 @@ import (
 	"github.com/urfave/cli/v3"
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/crypto/ssh/terminal" // nolint:staticcheck
+	"gorm.io/gorm"
 )
 
 var banner = `
@@ -57,7 +58,11 @@ const (
 	FlagQuietName    = "quiet"
 	FlagInspectName  = "inspect"
 	UserAdminName    = "admin"
+	FlagLimitName    = "limit"
+	FlagLimitUsage   = "Limit the number of item to display (0 for no limit)"
 )
+
+const defaultBatchSize = 3000
 
 func shell(s gliderssh.Session, version, gitSha, gitTag string) error {
 	var (
@@ -190,23 +195,37 @@ func shell(s gliderssh.Session, version, gitSha, gitTag string) error {
 					Flags: []cli.Flag{
 						&cli.BoolFlag{Name: FlagLatestName, Aliases: []string{"l"}, Usage: "Show the latest ACL"},
 						&cli.BoolFlag{Name: FlagQuietName, Aliases: []string{"q"}, Usage: FlagQuietUsage},
+						&cli.IntFlag{Name: FlagLimitName, Aliases: []string{"n"}, Value: 100, Usage: FlagLimitUsage},
 					},
 					Action: func(c context.Context, cmd *cli.Command) error {
 						if err := myself.CheckRoles([]string{UserAdminName}); err != nil {
 							return err
 						}
 
-						var acls []*dbmodels.ACL
-						query := db.Order("created_at desc").Preload("UserGroups").Preload("HostGroups")
+						limit := cmd.Int(FlagLimitName)
+						query := db.Order("id desc").Preload("UserGroups").Preload("HostGroups")
+
+						var acls []dbmodels.ACL
+						var err error
+
 						if cmd.Bool(FlagLatestName) {
 							var acl dbmodels.ACL
 							if err := query.First(&acl).Error; err != nil {
 								return err
 							}
-							acls = append(acls, &acl)
-						} else if err := query.Find(&acls).Error; err != nil {
-							return err
+							acls = append(acls, acl)
+						} else {
+							acls, err = FetchPaginated[dbmodels.ACL](
+								query,
+								limit,
+								defaultBatchSize,
+								func(a dbmodels.ACL) uint { return a.ID },
+							)
+							if err != nil {
+								return err
+							}
 						}
+
 						if cmd.Bool(FlagQuietName) {
 							for _, acl := range acls {
 								fmt.Fprintln(s, acl.ID)
@@ -692,22 +711,35 @@ func shell(s gliderssh.Session, version, gitSha, gitTag string) error {
 					Flags: []cli.Flag{
 						&cli.BoolFlag{Name: FlagLatestName, Aliases: []string{"l"}, Usage: "Show the latest event"},
 						&cli.BoolFlag{Name: FlagQuietName, Aliases: []string{"q"}, Usage: FlagQuietUsage},
+						&cli.IntFlag{Name: FlagLimitName, Aliases: []string{"n"}, Value: 100, Usage: FlagLimitUsage},
 					},
 					Action: func(c context.Context, cmd *cli.Command) error {
 						if err := myself.CheckRoles([]string{UserAdminName}); err != nil {
 							return err
 						}
 
+						limit := cmd.Int(FlagLimitName)
+						query := db.Order("id desc").Preload("Author")
+
 						var events []dbmodels.Event
-						query := db.Order("created_at desc").Preload("Author")
+						var err error
+
 						if cmd.Bool(FlagLatestName) {
 							var event dbmodels.Event
 							if err := query.First(&event).Error; err != nil {
 								return err
 							}
 							events = append(events, event)
-						} else if err := query.Find(&events).Error; err != nil {
-							return err
+						} else {
+							events, err = FetchPaginated[dbmodels.Event](
+								query,
+								limit,
+								defaultBatchSize,
+								func(a dbmodels.Event) uint { return a.ID },
+							)
+							if err != nil {
+								return err
+							}
 						}
 
 						if cmd.Bool(FlagQuietName) {
@@ -898,22 +930,35 @@ func shell(s gliderssh.Session, version, gitSha, gitTag string) error {
 					Flags: []cli.Flag{
 						&cli.BoolFlag{Name: FlagLatestName, Aliases: []string{"l"}, Usage: "Show the latest host"},
 						&cli.BoolFlag{Name: FlagQuietName, Aliases: []string{"q"}, Usage: FlagQuietUsage},
+						&cli.IntFlag{Name: FlagLimitName, Aliases: []string{"n"}, Value: 100, Usage: FlagLimitUsage},
 					},
 					Action: func(c context.Context, cmd *cli.Command) error {
 						if err := myself.CheckRoles([]string{"admin", "listhosts"}); err != nil {
 							return err
 						}
 
-						var hosts []*dbmodels.Host
-						query := db.Order("created_at desc").Preload("Groups")
+						limit := cmd.Int(FlagLimitName)
+						query := db.Order("id desc").Preload("Groups")
+
+						var hosts []dbmodels.Host
+						var err error
+
 						if cmd.Bool(FlagLatestName) {
 							var host dbmodels.Host
 							if err := query.First(&host).Error; err != nil {
 								return err
 							}
-							hosts = append(hosts, &host)
-						} else if err := query.Find(&hosts).Error; err != nil {
-							return err
+							hosts = append(hosts, host)
+						} else {
+							hosts, err = FetchPaginated[dbmodels.Host](
+								query,
+								limit,
+								defaultBatchSize,
+								func(a dbmodels.Host) uint { return a.ID },
+							)
+							if err != nil {
+								return err
+							}
 						}
 
 						if cmd.Bool(FlagQuietName) {
@@ -1210,22 +1255,34 @@ func shell(s gliderssh.Session, version, gitSha, gitTag string) error {
 					Flags: []cli.Flag{
 						&cli.BoolFlag{Name: FlagLatestName, Aliases: []string{"l"}, Usage: "Show the latest host group"},
 						&cli.BoolFlag{Name: FlagQuietName, Aliases: []string{"q"}, Usage: FlagQuietUsage},
+						&cli.IntFlag{Name: FlagLimitName, Aliases: []string{"n"}, Value: 100, Usage: FlagLimitUsage},
 					},
 					Action: func(c context.Context, cmd *cli.Command) error {
 						if err := myself.CheckRoles([]string{UserAdminName}); err != nil {
 							return err
 						}
+						limit := cmd.Int(FlagLimitName)
+						query := db.Order("id desc")
 
-						var hostGroups []*dbmodels.HostGroup
-						query := db.Order("created_at desc").Preload("ACLs").Preload("Hosts")
+						var hostGroups []dbmodels.HostGroup
+						var err error
+
 						if cmd.Bool(FlagLatestName) {
 							var hostGroup dbmodels.HostGroup
 							if err := query.First(&hostGroup).Error; err != nil {
 								return err
 							}
-							hostGroups = append(hostGroups, &hostGroup)
-						} else if err := query.Find(&hostGroups).Error; err != nil {
-							return err
+							hostGroups = append(hostGroups, hostGroup)
+						} else {
+							hostGroups, err = FetchPaginated[dbmodels.HostGroup](
+								query,
+								limit,
+								defaultBatchSize,
+								func(a dbmodels.HostGroup) uint { return a.ID },
+							)
+							if err != nil {
+								return err
+							}
 						}
 
 						if cmd.Bool(FlagQuietName) {
@@ -1248,11 +1305,13 @@ func shell(s gliderssh.Session, version, gitSha, gitTag string) error {
 						})
 						for _, hostGroup := range hostGroups {
 							// FIXME: add more stats (amount of hosts, linked usergroups, ...)
+							hostsCount := db.Model(hostGroup).Association("Hosts").Count()
+							aclsCount := db.Model(hostGroup).Association("ACLs").Count()
 							if err := table.Append(
 								fmt.Sprintf("%d", hostGroup.ID),
 								hostGroup.Name,
-								fmt.Sprintf("%d", len(hostGroup.Hosts)),
-								fmt.Sprintf("%d", len(hostGroup.ACLs)),
+								fmt.Sprintf("%d", hostsCount),
+								fmt.Sprintf("%d", aclsCount),
 								utils.Time(hostGroup.UpdatedAt),
 								utils.Time(hostGroup.CreatedAt),
 								hostGroup.Comment,
@@ -1527,23 +1586,37 @@ func shell(s gliderssh.Session, version, gitSha, gitTag string) error {
 					Flags: []cli.Flag{
 						&cli.BoolFlag{Name: FlagLatestName, Aliases: []string{"l"}, Usage: "Show the latest key"},
 						&cli.BoolFlag{Name: FlagQuietName, Aliases: []string{"q"}, Usage: FlagQuietUsage},
+						&cli.IntFlag{Name: FlagLimitName, Aliases: []string{"n"}, Value: 100, Usage: FlagLimitUsage},
 					},
 					Action: func(c context.Context, cmd *cli.Command) error {
 						if err := myself.CheckRoles([]string{UserAdminName}); err != nil {
 							return err
 						}
 
-						var sshKeys []*dbmodels.SSHKey
-						query := db.Order("created_at desc").Preload("Hosts")
+						limit := cmd.Int(FlagLimitName)
+						query := db.Order("id desc").Preload("Hosts")
+
+						var sshKeys []dbmodels.SSHKey
+						var err error
+
 						if cmd.Bool(FlagLatestName) {
 							var sshKey dbmodels.SSHKey
 							if err := query.First(&sshKey).Error; err != nil {
 								return err
 							}
-							sshKeys = append(sshKeys, &sshKey)
-						} else if err := query.Find(&sshKeys).Error; err != nil {
-							return err
+							sshKeys = append(sshKeys, sshKey)
+						} else {
+							sshKeys, err = FetchPaginated[dbmodels.SSHKey](
+								query,
+								limit,
+								defaultBatchSize,
+								func(a dbmodels.SSHKey) uint { return a.ID },
+							)
+							if err != nil {
+								return err
+							}
 						}
+
 						if cmd.Bool(FlagQuietName) {
 							for _, sshKey := range sshKeys {
 								fmt.Fprintln(s, sshKey.ID)
@@ -1792,23 +1865,37 @@ func shell(s gliderssh.Session, version, gitSha, gitTag string) error {
 					Flags: []cli.Flag{
 						&cli.BoolFlag{Name: FlagLatestName, Aliases: []string{"l"}, Usage: "Show the latest user"},
 						&cli.BoolFlag{Name: FlagQuietName, Aliases: []string{"q"}, Usage: FlagQuietUsage},
+						&cli.IntFlag{Name: FlagLimitName, Aliases: []string{"n"}, Value: 100, Usage: FlagLimitUsage},
 					},
 					Action: func(c context.Context, cmd *cli.Command) error {
 						if err := myself.CheckRoles([]string{UserAdminName}); err != nil {
 							return err
 						}
 
-						var users []*dbmodels.User
-						query := db.Order("created_at desc").Preload("Groups").Preload("Roles").Preload("Keys")
+						limit := cmd.Int(FlagLimitName)
+						query := db.Order("id desc").Preload("Roles").Preload("Keys")
+
+						var users []dbmodels.User
+						var err error
+
 						if cmd.Bool(FlagLatestName) {
 							var user dbmodels.User
 							if err := query.First(&user).Error; err != nil {
 								return err
 							}
-							users = append(users, &user)
-						} else if err := query.Find(&users).Error; err != nil {
-							return err
+							users = append(users, user)
+						} else {
+							users, err = FetchPaginated[dbmodels.User](
+								query,
+								limit,
+								defaultBatchSize,
+								func(a dbmodels.User) uint { return a.ID },
+							)
+							if err != nil {
+								return err
+							}
 						}
+
 						if cmd.Bool(FlagQuietName) {
 							for _, user := range users {
 								fmt.Fprintln(s, user.ID)
@@ -1906,7 +1993,7 @@ func shell(s gliderssh.Session, version, gitSha, gitTag string) error {
 						}
 
 						// FIXME: check if unset-admin + user == myself
-						var users []*dbmodels.User
+						var users []dbmodels.User
 						if err := dbmodels.UsersByIdentifiers(db, cmd.Args().Slice()).Find(&users).Error; err != nil {
 							return err
 						}
@@ -2070,23 +2157,37 @@ func shell(s gliderssh.Session, version, gitSha, gitTag string) error {
 					Flags: []cli.Flag{
 						&cli.BoolFlag{Name: FlagLatestName, Aliases: []string{"l"}, Usage: "Show the latest user group"},
 						&cli.BoolFlag{Name: FlagQuietName, Aliases: []string{"q"}, Usage: FlagQuietUsage},
+						&cli.IntFlag{Name: FlagLimitName, Aliases: []string{"n"}, Value: 100, Usage: FlagLimitUsage},
 					},
 					Action: func(c context.Context, cmd *cli.Command) error {
 						if err := myself.CheckRoles([]string{UserAdminName}); err != nil {
 							return err
 						}
 
-						var userGroups []*dbmodels.UserGroup
-						query := db.Order("created_at desc").Preload("ACLs").Preload("Users")
+						limit := cmd.Int(FlagLimitName)
+						query := db.Order("id desc")
+
+						var userGroups []dbmodels.UserGroup
+						var err error
+
 						if cmd.Bool(FlagLatestName) {
 							var userGroup dbmodels.UserGroup
 							if err := query.First(&userGroup).Error; err != nil {
 								return err
 							}
-							userGroups = append(userGroups, &userGroup)
-						} else if err := query.Find(&userGroups).Error; err != nil {
-							return err
+							userGroups = append(userGroups, userGroup)
+						} else {
+							userGroups, err = FetchPaginated[dbmodels.UserGroup](
+								query,
+								limit,
+								defaultBatchSize,
+								func(a dbmodels.UserGroup) uint { return a.ID },
+							)
+							if err != nil {
+								return err
+							}
 						}
+
 						if cmd.Bool(FlagQuietName) {
 							for _, userGroup := range userGroups {
 								fmt.Fprintln(s, userGroup.ID)
@@ -2099,18 +2200,20 @@ func shell(s gliderssh.Session, version, gitSha, gitTag string) error {
 								Symbols: tw.NewSymbols(tw.StyleRounded),
 							}),
 						)
-						table.Header("ID", "Name", "Users", "ACLs", "Update", "Create", "Comment")
+						table.Header("ID", "Name", "Users", "Acls", "Update", "Create", "Comment")
 						table.Caption(tw.Caption{
 							Text:  fmt.Sprintf("Total: %d user groups", len(userGroups)),
 							Spot:  tw.SpotBottomCenter,
 							Align: tw.AlignCenter,
 						})
 						for _, userGroup := range userGroups {
+							usersCount := db.Model(userGroup).Association("Users").Count()
+							aclsCount := db.Model(userGroup).Association("ACLs").Count()
 							if err := table.Append(
 								fmt.Sprintf("%d", userGroup.ID),
 								userGroup.Name,
-								fmt.Sprintf("%d", len(userGroup.Users)),
-								fmt.Sprintf("%d", len(userGroup.ACLs)),
+								fmt.Sprintf("%d", usersCount),
+								fmt.Sprintf("%d", aclsCount),
 								utils.Time(userGroup.UpdatedAt),
 								utils.Time(userGroup.CreatedAt),
 								userGroup.Comment,
@@ -2289,23 +2392,37 @@ func shell(s gliderssh.Session, version, gitSha, gitTag string) error {
 					Flags: []cli.Flag{
 						&cli.BoolFlag{Name: FlagLatestName, Aliases: []string{"l"}, Usage: "Show the latest user key"},
 						&cli.BoolFlag{Name: FlagQuietName, Aliases: []string{"q"}, Usage: FlagQuietUsage},
+						&cli.IntFlag{Name: FlagLimitName, Aliases: []string{"n"}, Value: 100, Usage: FlagLimitUsage},
 					},
 					Action: func(c context.Context, cmd *cli.Command) error {
 						if err := myself.CheckRoles([]string{UserAdminName}); err != nil {
 							return err
 						}
 
-						var userKeys []*dbmodels.UserKey
-						query := db.Order("created_at desc").Preload("User")
+						limit := cmd.Int(FlagLimitName)
+						query := db.Order("id desc").Preload("User")
+
+						var userKeys []dbmodels.UserKey
+						var err error
+
 						if cmd.Bool(FlagLatestName) {
 							var userKey dbmodels.UserKey
 							if err := query.First(&userKey).Error; err != nil {
 								return err
 							}
-							userKeys = append(userKeys, &userKey)
-						} else if err := query.Find(&userKeys).Error; err != nil {
-							return err
+							userKeys = append(userKeys, userKey)
+						} else {
+							userKeys, err = FetchPaginated[dbmodels.UserKey](
+								query,
+								limit,
+								defaultBatchSize,
+								func(a dbmodels.UserKey) uint { return a.ID },
+							)
+							if err != nil {
+								return err
+							}
 						}
+
 						if cmd.Bool(FlagQuietName) {
 							for _, userKey := range userKeys {
 								fmt.Fprintln(s, userKey.ID)
@@ -2411,45 +2528,42 @@ func shell(s gliderssh.Session, version, gitSha, gitTag string) error {
 						&cli.BoolFlag{Name: FlagLatestName, Aliases: []string{"l"}, Usage: "Show the latest session"},
 						&cli.BoolFlag{Name: "active", Aliases: []string{"a"}, Usage: "Show only active session"},
 						&cli.BoolFlag{Name: FlagQuietName, Aliases: []string{"q"}, Usage: FlagQuietUsage},
+						&cli.IntFlag{Name: FlagLimitName, Aliases: []string{"n"}, Value: 100, Usage: FlagLimitUsage},
 					},
 					Action: func(c context.Context, cmd *cli.Command) error {
 						if err := myself.CheckRoles([]string{UserAdminName}); err != nil {
 							return err
 						}
 
-						var sessions []*dbmodels.Session
+						limit := cmd.Int(FlagLimitName)
+						status := []string{string(dbmodels.SessionStatusActive), string(dbmodels.SessionStatusClosed), string(dbmodels.SessionStatusUnknown)}
 
-						limit, offset, status := 60000, -1, []string{string(dbmodels.SessionStatusActive), string(dbmodels.SessionStatusClosed), string(dbmodels.SessionStatusUnknown)}
 						if cmd.Bool("active") {
 							status = status[:1]
 						}
+						query := db.Order("id desc").Where("status in (?)", status).Preload("User").Preload("Host")
 
-						query := db.Order("created_at desc").Limit(limit).Offset(offset).Where("status in (?)", status).Preload("User").Preload("Host")
+						var sessions []dbmodels.Session
+						var err error
 
 						if cmd.Bool(FlagLatestName) {
 							var session dbmodels.Session
 							if err := query.First(&session).Error; err != nil {
 								return err
 							}
-							sessions = append(sessions, &session)
+							sessions = append(sessions, session)
 						} else {
-							if err := query.Find(&sessions).Error; err != nil {
+							sessions, err = FetchPaginated[dbmodels.Session](
+								query,
+								limit,
+								defaultBatchSize,
+								func(a dbmodels.Session) uint { return a.ID },
+							)
+							if err != nil {
 								return err
 							}
-
-							factor := 1
-							for len(sessions) >= limit*factor {
-								var additionnalSessions []*dbmodels.Session
-
-								offset = limit * factor
-								query := db.Order("created_at desc").Limit(limit).Offset(offset).Where("status in (?)", status).Preload("User").Preload("Host")
-								if err := query.Find(&additionnalSessions).Error; err != nil {
-									return err
-								}
-								sessions = append(sessions, additionnalSessions...)
-								factor++
-							}
 						}
+
 						if cmd.Bool(FlagQuietName) {
 							for _, session := range sessions {
 								fmt.Fprintln(s, session.ID)
@@ -2590,4 +2704,51 @@ func parseOptionalTime(input string) (*time.Time, error) {
 		return &parsed, nil
 	}
 	return nil, nil
+}
+
+// FetchPaginated retrieves records in batches, using cursor-based
+// pagination on the ID (avoids costly OFFSETs on large tables).
+// limit == 0 will fetch all data (with batchSize).
+// limit > 0 will stop as soon as `limit` results are fetched.
+func FetchPaginated[T any](
+	queryBuilder *gorm.DB,
+	limit int,
+	batchSize int,
+	getID func(T) uint,
+) ([]T, error) {
+
+	var results []T
+	var lastID uint = 0
+
+	for limit == 0 || len(results) < limit {
+		fetchSize := batchSize
+
+		if limit > 0 {
+			if remaining := limit - len(results); remaining < fetchSize {
+				fetchSize = remaining
+			}
+		}
+
+		var batch []T
+		query := queryBuilder.Limit(fetchSize)
+		if lastID != 0 {
+			query = query.Where("id < ?", lastID)
+		}
+		if err := query.Find(&batch).Error; err != nil {
+			return nil, err
+		}
+
+		if len(batch) == 0 {
+			break
+		}
+
+		results = append(results, batch...)
+		lastID = getID(batch[len(batch)-1])
+
+		if len(batch) < fetchSize {
+			break
+		}
+	}
+
+	return results, nil
 }
