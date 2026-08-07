@@ -205,6 +205,11 @@ func shell(s gliderssh.Session, version, gitSha, gitTag string) error {
 						limit := cmd.Int(FlagLimitName)
 						query := db.Order("id desc").Preload("UserGroups").Preload("HostGroups")
 
+						var total int64
+						if err := db.Model(&dbmodels.ACL{}).Count(&total).Error; err != nil {
+							return err
+						}
+
 						var acls []dbmodels.ACL
 						var err error
 
@@ -252,7 +257,7 @@ func shell(s gliderssh.Session, version, gitSha, gitTag string) error {
 							"Comment",
 						)
 						table.Caption(tw.Caption{
-							Text:  fmt.Sprintf("Total: %d ACLs", len(acls)),
+							Text:  fmt.Sprintf("Total: %s ACLs", FormatCount(len(acls), total)),
 							Spot:  tw.SpotBottomCenter,
 							Align: tw.AlignCenter,
 						})
@@ -721,6 +726,11 @@ func shell(s gliderssh.Session, version, gitSha, gitTag string) error {
 						limit := cmd.Int(FlagLimitName)
 						query := db.Order("id desc").Preload("Author")
 
+						var total int64
+						if err := db.Model(&dbmodels.Event{}).Count(&total).Error; err != nil {
+							return err
+						}
+
 						var events []dbmodels.Event
 						var err error
 
@@ -756,7 +766,7 @@ func shell(s gliderssh.Session, version, gitSha, gitTag string) error {
 						)
 						table.Header("ID", "Author", "Domain", "Action", "Entity", "Args", "Date")
 						table.Caption(tw.Caption{
-							Text:  fmt.Sprintf("Total: %d events", len(events)),
+							Text:  fmt.Sprintf("Total: %s events", FormatCount(len(events), total)),
 							Spot:  tw.SpotBottomCenter,
 							Align: tw.AlignCenter,
 						})
@@ -940,6 +950,11 @@ func shell(s gliderssh.Session, version, gitSha, gitTag string) error {
 						limit := cmd.Int(FlagLimitName)
 						query := db.Order("id desc").Preload("Groups")
 
+						var total int64
+						if err := db.Model(&dbmodels.Host{}).Count(&total).Error; err != nil {
+							return err
+						}
+
 						var hosts []dbmodels.Host
 						var err error
 
@@ -986,7 +1001,7 @@ func shell(s gliderssh.Session, version, gitSha, gitTag string) error {
 							"Logging",
 						)
 						table.Caption(tw.Caption{
-							Text:  fmt.Sprintf("Total: %d hosts", len(hosts)),
+							Text:  fmt.Sprintf("Total: %s hosts", FormatCount(len(hosts), total)),
 							Spot:  tw.SpotBottomCenter,
 							Align: tw.AlignCenter,
 						})
@@ -1264,6 +1279,11 @@ func shell(s gliderssh.Session, version, gitSha, gitTag string) error {
 						limit := cmd.Int(FlagLimitName)
 						query := db.Order("id desc")
 
+						var total int64
+						if err := db.Model(&dbmodels.HostGroup{}).Count(&total).Error; err != nil {
+							return err
+						}
+
 						var hostGroups []dbmodels.HostGroup
 						var err error
 
@@ -1299,7 +1319,7 @@ func shell(s gliderssh.Session, version, gitSha, gitTag string) error {
 						)
 						table.Header("ID", "Name", "Hosts", "ACLs", "Updated", "Created", FlagCommentName)
 						table.Caption(tw.Caption{
-							Text:  fmt.Sprintf("Total: %d host groups", len(hostGroups)),
+							Text:  fmt.Sprintf("Total: %s host groups", FormatCount(len(hostGroups), total)),
 							Spot:  tw.SpotBottomCenter,
 							Align: tw.AlignCenter,
 						})
@@ -1596,6 +1616,11 @@ func shell(s gliderssh.Session, version, gitSha, gitTag string) error {
 						limit := cmd.Int(FlagLimitName)
 						query := db.Order("id desc").Preload("Hosts")
 
+						var total int64
+						if err := db.Model(&dbmodels.SSHKey{}).Count(&total).Error; err != nil {
+							return err
+						}
+
 						var sshKeys []dbmodels.SSHKey
 						var err error
 
@@ -1640,7 +1665,7 @@ func shell(s gliderssh.Session, version, gitSha, gitTag string) error {
 							"Comment",
 						)
 						table.Caption(tw.Caption{
-							Text:  fmt.Sprintf("Total: %d keys", len(sshKeys)),
+							Text:  fmt.Sprintf("Total: %s keys", FormatCount(len(sshKeys), total)),
 							Spot:  tw.SpotBottomCenter,
 							Align: tw.AlignCenter,
 						})
@@ -1875,6 +1900,11 @@ func shell(s gliderssh.Session, version, gitSha, gitTag string) error {
 						limit := cmd.Int(FlagLimitName)
 						query := db.Order("id desc").Preload("Roles").Preload("Keys")
 
+						var total int64
+						if err := db.Model(&dbmodels.User{}).Count(&total).Error; err != nil {
+							return err
+						}
+
 						var users []dbmodels.User
 						var err error
 
@@ -1921,7 +1951,7 @@ func shell(s gliderssh.Session, version, gitSha, gitTag string) error {
 							"Invite Token",
 						)
 						table.Caption(tw.Caption{
-							Text:  fmt.Sprintf("Total: %d users", len(users)),
+							Text:  fmt.Sprintf("Total: %s users", FormatCount(len(users), total)),
 							Spot:  tw.SpotBottomCenter,
 							Align: tw.AlignCenter,
 						})
@@ -2167,6 +2197,11 @@ func shell(s gliderssh.Session, version, gitSha, gitTag string) error {
 						limit := cmd.Int(FlagLimitName)
 						query := db.Order("id desc")
 
+						var total int64
+						if err := db.Model(&dbmodels.UserGroup{}).Count(&total).Error; err != nil {
+							return err
+						}
+
 						var userGroups []dbmodels.UserGroup
 						var err error
 
@@ -2202,7 +2237,7 @@ func shell(s gliderssh.Session, version, gitSha, gitTag string) error {
 						)
 						table.Header("ID", "Name", "Users", "Acls", "Update", "Create", "Comment")
 						table.Caption(tw.Caption{
-							Text:  fmt.Sprintf("Total: %d user groups", len(userGroups)),
+							Text:  fmt.Sprintf("Total: %s user groups", FormatCount(len(userGroups), total)),
 							Spot:  tw.SpotBottomCenter,
 							Align: tw.AlignCenter,
 						})
@@ -2408,6 +2443,11 @@ func shell(s gliderssh.Session, version, gitSha, gitTag string) error {
 						limit := cmd.Int(FlagLimitName)
 						query := db.Order("id desc").Preload("User")
 
+						var total int64
+						if err := db.Model(&dbmodels.UserKey{}).Count(&total).Error; err != nil {
+							return err
+						}
+
 						var userKeys []dbmodels.UserKey
 						var err error
 
@@ -2443,7 +2483,7 @@ func shell(s gliderssh.Session, version, gitSha, gitTag string) error {
 						)
 						table.Header("ID", "User", "Updated", "Created", "Comment", "Fingerprint")
 						table.Caption(tw.Caption{
-							Text:  fmt.Sprintf("Total: %d userkeys", len(userKeys)),
+							Text:  fmt.Sprintf("Total: %s userkeys", FormatCount(len(userKeys), total)),
 							Spot:  tw.SpotBottomCenter,
 							Align: tw.AlignCenter,
 						})
@@ -2549,6 +2589,11 @@ func shell(s gliderssh.Session, version, gitSha, gitTag string) error {
 						}
 						query := db.Order("id desc").Where("status in (?)", status).Preload("User").Preload("Host")
 
+						var total int64
+						if err := db.Model(&dbmodels.Session{}).Where("status in (?)", status).Count(&total).Error; err != nil {
+							return err
+						}
+
 						var sessions []dbmodels.Session
 						var err error
 
@@ -2593,7 +2638,7 @@ func shell(s gliderssh.Session, version, gitSha, gitTag string) error {
 							"Comment",
 						)
 						table.Caption(tw.Caption{
-							Text:  fmt.Sprintf("Total: %d sessions", len(sessions)),
+							Text:  fmt.Sprintf("Total: %s sessions", FormatCount(len(sessions), total)),
 							Spot:  tw.SpotBottomCenter,
 							Align: tw.AlignCenter,
 						})
@@ -2710,6 +2755,13 @@ func parseOptionalTime(input string) (*time.Time, error) {
 		return &parsed, nil
 	}
 	return nil, nil
+}
+
+func FormatCount(fetched int, total int64) string {
+	if int64(fetched) < total {
+		return fmt.Sprintf("%d/%d", fetched, total)
+	}
+	return fmt.Sprintf("%d", total)
 }
 
 // FetchPaginated retrieves records in batches, using cursor-based
