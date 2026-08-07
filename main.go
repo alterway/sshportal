@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"path"
+	"time"
 
 	"github.com/urfave/cli/v3"
 )
@@ -81,6 +82,18 @@ func main() {
 					Name:    "acl-check-cmd",
 					Sources: cli.EnvVars("SSHPORTAL_ACL_CHECK_CMD"),
 					Usage:   "Execute external command to check ACL",
+				},
+				&cli.DurationFlag{
+					Name:    "session-retention-duration",
+					Sources: cli.EnvVars("SSHPORTAL_SESSION_RETENTION_DURATION"),
+					Value:   10 * 24 * time.Hour,
+					Usage:   "How long to keep closed sessions logs in DB before deleting them (Go duration string)",
+				},
+				&cli.DurationFlag{
+					Name:    "session-cleanup-interval",
+					Sources: cli.EnvVars("SSHPORTAL_SESSION_CLEANUP_INTERVAL"),
+					Value:   12 * time.Hour,
+					Usage:   "How often to run the closed sessions cleanup job (Go duration string).Set 0 to disable cleanup",
 				},
 			},
 		},

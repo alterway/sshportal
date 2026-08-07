@@ -22,26 +22,30 @@ import (
 )
 
 type serverConfig struct {
-	aesKey          string
-	dbDriver, dbURL string
-	logsLocation    string
-	bindAddr        string
-	debug, demo     bool
-	idleTimeout     time.Duration
-	aclCheckCmd     string
+	aesKey                   string
+	dbDriver, dbURL          string
+	logsLocation             string
+	bindAddr                 string
+	debug, demo              bool
+	idleTimeout              time.Duration
+	aclCheckCmd              string
+	sessionRetentionDuration time.Duration
+	sessionCleanupInterval   time.Duration
 }
 
 func parseServerConfig(c *cli.Command) (*serverConfig, error) {
 	ret := &serverConfig{
-		aesKey:       c.String("aes-key"),
-		dbDriver:     c.String("db-driver"),
-		dbURL:        c.String("db-conn"),
-		bindAddr:     c.String("bind-address"),
-		debug:        c.Bool("debug"),
-		demo:         c.Bool("demo"),
-		logsLocation: c.String("logs-location"),
-		idleTimeout:  c.Duration("idle-timeout"),
-		aclCheckCmd:  c.String("acl-check-cmd"),
+		aesKey:                   c.String("aes-key"),
+		dbDriver:                 c.String("db-driver"),
+		dbURL:                    c.String("db-conn"),
+		bindAddr:                 c.String("bind-address"),
+		debug:                    c.Bool("debug"),
+		demo:                     c.Bool("demo"),
+		logsLocation:             c.String("logs-location"),
+		idleTimeout:              c.Duration("idle-timeout"),
+		aclCheckCmd:              c.String("acl-check-cmd"),
+		sessionRetentionDuration: c.Duration("session-retention-duration"),
+		sessionCleanupInterval:   c.Duration("session-cleanup-interval"),
 	}
 	switch len(ret.aesKey) {
 	case 0, 16, 24, 32:
@@ -104,6 +108,9 @@ func server(c *serverConfig) (err error) {
 	if err = bastion.DBInit(db, c.aesKey); err != nil {
 		return err
 	}
+
+	// periodic cleanup of closed sessions older than the configured retention duration
+	bastion.StartSessionCleanupJob(db, c.sessionCleanupInterval, c.sessionRetentionDuration)
 
 	// create TCP listening socket
 	ln, err := net.Listen("tcp", c.bindAddr)

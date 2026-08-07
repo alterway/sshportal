@@ -8,8 +8,10 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/alterway/sshportal/pkg/dbmodels"
 	gliderssh "github.com/gliderlabs/ssh"
 	"golang.org/x/crypto/ssh"
+	"gorm.io/gorm"
 )
 
 type sessionConfig struct {
@@ -270,4 +272,39 @@ type discardWriteCloser struct {
 
 func (discardWriteCloser) Close() error {
 	return nil
+}
+
+// Sessions are already logged (audit logs + session logs)
+// so there is no need to keep them in DB indefinitely
+func cleanupOldSessions(db *gorm.DB, retentionDuration time.Duration) {
+	if retentionDuration <= 0 {
+		return
+	}
+	threshold := time.Now().Add(-retentionDuration)
+	result := db.Unscoped().
+		Where("status = ? AND COALESCE(stopped_at, updated_at) < ?", string(dbmodels.SessionStatusClosed), threshold).Delete(&dbmodels.Session{})
+	if result.Error != nil {
+		log.Printf("Error: failed to cleanup old sessions: %v", result.Error)
+		return
+	}
+	if result.RowsAffected > 0 {
+		log.Printf("info: cleaned up %d session(s) older than %v", result.RowsAffected, retentionDuration)
+	}
+}
+
+func StartSessionCleanupJob(db *gorm.DB, interval time.Duration, retentionDuration time.Duration) {
+	if interval <= 0 {
+		log.Printf("info: session cleanup disabled (interval=%v)", interval)
+		return
+	}
+
+	go func() {
+		cleanupOldSessions(db, retentionDuration)
+
+		ticker := time.NewTicker(interval)
+		defer ticker.Stop()
+		for range ticker.C {
+			cleanupOldSessions(db, retentionDuration)
+		}
+	}()
 }
