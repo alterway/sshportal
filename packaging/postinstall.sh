@@ -20,10 +20,12 @@ elif [ -z "$2" ] || [ ! -f /etc/systemd/system/sshportal.service.d/custom.conf ]
 tee /etc/systemd/system/sshportal.service.d/custom.conf >/dev/null 2>&1 << END
 [Service]
 Environment=SSHPORTAL_DB_DRIVER=sqlite3
-Environment=SSHPORTAL_DATABASE_URL=/var/lib/sshportal/sshportal.db
+Environment=SSHPORTAL_DATABASE_URL=/var/lib/sshportal/sshportal.db?_fk=1
 END
 
 fi
+
+[ -n "$2" ] && sed -i 's/sshportal\.db$/sshportal.db?_fk=1/' /etc/systemd/system/sshportal.service.d/custom.conf
 
 if command -v selinuxenabled >/dev/null 2>&1; then
 	semodule -i /usr/share/selinux/packages/sshportal.pp

@@ -20,7 +20,7 @@ func SetupBase(aesKey string) (*gorm.DB, string, error) {
 	}
 	//
 
-	db, err := gorm.Open(sqlite.Open(filepath.Join(tmpDir, "sshportal.db")), &gorm.Config{})
+	db, err := gorm.Open(sqlite.Open(filepath.Join(tmpDir, "sshportal.db?_foreign_keys=on")), &gorm.Config{})
 	if err != nil {
 		return nil, "", fmt.Errorf("Can't setup test DB: %v", err)
 	}

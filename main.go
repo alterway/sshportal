@@ -53,7 +53,7 @@ func main() {
 				&cli.StringFlag{
 					Name:    "db-conn",
 					Sources: cli.EnvVars("SSHPORTAL_DATABASE_URL"),
-					Value:   "./sshportal.db",
+					Value:   "./sshportal.db?_fk=1",
 					Usage:   "GORM connection string",
 				},
 				&cli.BoolFlag{
@@ -108,7 +108,7 @@ func main() {
 				&cli.StringFlag{
 					Name:    "db-conn",
 					Sources: cli.EnvVars("SSHPORTAL_DATABASE_URL"),
-					Value:   "./sshportal.db",
+					Value:   "./sshportal.db?_fk=1",
 					Usage:   "GORM connection string",
 				},
 				&cli.BoolFlag{
