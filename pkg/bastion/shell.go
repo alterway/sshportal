@@ -2350,11 +2350,17 @@ func shell(s gliderssh.Session, version, gitSha, gitTag string) error {
 									return err
 								}
 
-								// save the userkey in database
-								if err := db.Create(&userkey).Error; err != nil {
+								if err := db.Transaction(func(tx *gorm.DB) error {
+									// save the userkey in database
+									if err := tx.Create(&userkey).Error; err != nil {
+										return err
+									}
+									return tx.Model(&user).Update("invite_token", "").Error
+								}); err != nil {
 									return err
 								}
 								fmt.Fprintf(s, "%d\n", userkey.ID)
+
 								if errReadline == io.EOF {
 									return nil
 								}

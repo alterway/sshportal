@@ -360,6 +360,15 @@ func PublicKeyAuthHandler(db *gorm.DB, logsLocation, aclCheckCmd, aesKey, dbDriv
 				db.Where("invite_token = ?", inputToken).First(&actx.user)
 			}
 			if actx.user.ID > 0 {
+				var existingKeysCount int64
+				if err := db.Model(&dbmodels.UserKey{}).Where("user_id = ?", actx.user.ID).Count(&existingKeysCount).Error; err != nil {
+					actx.err = err
+					return true
+				}
+				if existingKeysCount > 0 {
+					actx.err = fmt.Errorf("the user %q already has a SSH key. You can't use this invitation token", actx.user.Email)
+					return true
+				}
 				actx.userKey = dbmodels.UserKey{
 					UserID:        actx.user.ID,
 					Key:           key.Marshal(),
