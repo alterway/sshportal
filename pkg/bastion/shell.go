@@ -60,6 +60,7 @@ const (
 	UserAdminName    = "admin"
 	FlagLimitName    = "limit"
 	FlagLimitUsage   = "Limit the number of item to display (0 for no limit)"
+	FlagLimitDefault = 250
 )
 
 const defaultBatchSize = 3000
@@ -195,7 +196,7 @@ func shell(s gliderssh.Session, version, gitSha, gitTag string) error {
 					Flags: []cli.Flag{
 						&cli.BoolFlag{Name: FlagLatestName, Aliases: []string{"l"}, Usage: "Show the latest ACL"},
 						&cli.BoolFlag{Name: FlagQuietName, Aliases: []string{"q"}, Usage: FlagQuietUsage},
-						&cli.IntFlag{Name: FlagLimitName, Aliases: []string{"n"}, Value: 100, Usage: FlagLimitUsage},
+						&cli.IntFlag{Name: FlagLimitName, Aliases: []string{"n"}, Value: FlagLimitDefault, Usage: FlagLimitUsage},
 					},
 					Action: func(c context.Context, cmd *cli.Command) error {
 						if err := myself.CheckRoles([]string{UserAdminName}); err != nil {
@@ -716,7 +717,7 @@ func shell(s gliderssh.Session, version, gitSha, gitTag string) error {
 					Flags: []cli.Flag{
 						&cli.BoolFlag{Name: FlagLatestName, Aliases: []string{"l"}, Usage: "Show the latest event"},
 						&cli.BoolFlag{Name: FlagQuietName, Aliases: []string{"q"}, Usage: FlagQuietUsage},
-						&cli.IntFlag{Name: FlagLimitName, Aliases: []string{"n"}, Value: 100, Usage: FlagLimitUsage},
+						&cli.IntFlag{Name: FlagLimitName, Aliases: []string{"n"}, Value: FlagLimitDefault, Usage: FlagLimitUsage},
 					},
 					Action: func(c context.Context, cmd *cli.Command) error {
 						if err := myself.CheckRoles([]string{UserAdminName}); err != nil {
@@ -940,7 +941,7 @@ func shell(s gliderssh.Session, version, gitSha, gitTag string) error {
 					Flags: []cli.Flag{
 						&cli.BoolFlag{Name: FlagLatestName, Aliases: []string{"l"}, Usage: "Show the latest host"},
 						&cli.BoolFlag{Name: FlagQuietName, Aliases: []string{"q"}, Usage: FlagQuietUsage},
-						&cli.IntFlag{Name: FlagLimitName, Aliases: []string{"n"}, Value: 100, Usage: FlagLimitUsage},
+						&cli.IntFlag{Name: FlagLimitName, Aliases: []string{"n"}, Value: FlagLimitDefault, Usage: FlagLimitUsage},
 					},
 					Action: func(c context.Context, cmd *cli.Command) error {
 						if err := myself.CheckRoles([]string{"admin", "listhosts"}); err != nil {
@@ -1270,7 +1271,7 @@ func shell(s gliderssh.Session, version, gitSha, gitTag string) error {
 					Flags: []cli.Flag{
 						&cli.BoolFlag{Name: FlagLatestName, Aliases: []string{"l"}, Usage: "Show the latest host group"},
 						&cli.BoolFlag{Name: FlagQuietName, Aliases: []string{"q"}, Usage: FlagQuietUsage},
-						&cli.IntFlag{Name: FlagLimitName, Aliases: []string{"n"}, Value: 100, Usage: FlagLimitUsage},
+						&cli.IntFlag{Name: FlagLimitName, Aliases: []string{"n"}, Value: FlagLimitDefault, Usage: FlagLimitUsage},
 					},
 					Action: func(c context.Context, cmd *cli.Command) error {
 						if err := myself.CheckRoles([]string{UserAdminName}); err != nil {
@@ -1606,7 +1607,7 @@ func shell(s gliderssh.Session, version, gitSha, gitTag string) error {
 					Flags: []cli.Flag{
 						&cli.BoolFlag{Name: FlagLatestName, Aliases: []string{"l"}, Usage: "Show the latest key"},
 						&cli.BoolFlag{Name: FlagQuietName, Aliases: []string{"q"}, Usage: FlagQuietUsage},
-						&cli.IntFlag{Name: FlagLimitName, Aliases: []string{"n"}, Value: 100, Usage: FlagLimitUsage},
+						&cli.IntFlag{Name: FlagLimitName, Aliases: []string{"n"}, Value: FlagLimitDefault, Usage: FlagLimitUsage},
 					},
 					Action: func(c context.Context, cmd *cli.Command) error {
 						if err := myself.CheckRoles([]string{UserAdminName}); err != nil {
@@ -1890,7 +1891,7 @@ func shell(s gliderssh.Session, version, gitSha, gitTag string) error {
 					Flags: []cli.Flag{
 						&cli.BoolFlag{Name: FlagLatestName, Aliases: []string{"l"}, Usage: "Show the latest user"},
 						&cli.BoolFlag{Name: FlagQuietName, Aliases: []string{"q"}, Usage: FlagQuietUsage},
-						&cli.IntFlag{Name: FlagLimitName, Aliases: []string{"n"}, Value: 100, Usage: FlagLimitUsage},
+						&cli.IntFlag{Name: FlagLimitName, Aliases: []string{"n"}, Value: FlagLimitDefault, Usage: FlagLimitUsage},
 					},
 					Action: func(c context.Context, cmd *cli.Command) error {
 						if err := myself.CheckRoles([]string{UserAdminName}); err != nil {
@@ -2187,7 +2188,7 @@ func shell(s gliderssh.Session, version, gitSha, gitTag string) error {
 					Flags: []cli.Flag{
 						&cli.BoolFlag{Name: FlagLatestName, Aliases: []string{"l"}, Usage: "Show the latest user group"},
 						&cli.BoolFlag{Name: FlagQuietName, Aliases: []string{"q"}, Usage: FlagQuietUsage},
-						&cli.IntFlag{Name: FlagLimitName, Aliases: []string{"n"}, Value: 100, Usage: FlagLimitUsage},
+						&cli.IntFlag{Name: FlagLimitName, Aliases: []string{"n"}, Value: FlagLimitDefault, Usage: FlagLimitUsage},
 					},
 					Action: func(c context.Context, cmd *cli.Command) error {
 						if err := myself.CheckRoles([]string{UserAdminName}); err != nil {
@@ -2433,7 +2434,7 @@ func shell(s gliderssh.Session, version, gitSha, gitTag string) error {
 					Flags: []cli.Flag{
 						&cli.BoolFlag{Name: FlagLatestName, Aliases: []string{"l"}, Usage: "Show the latest user key"},
 						&cli.BoolFlag{Name: FlagQuietName, Aliases: []string{"q"}, Usage: FlagQuietUsage},
-						&cli.IntFlag{Name: FlagLimitName, Aliases: []string{"n"}, Value: 100, Usage: FlagLimitUsage},
+						&cli.IntFlag{Name: FlagLimitName, Aliases: []string{"n"}, Value: FlagLimitDefault, Usage: FlagLimitUsage},
 					},
 					Action: func(c context.Context, cmd *cli.Command) error {
 						if err := myself.CheckRoles([]string{UserAdminName}); err != nil {
@@ -2574,7 +2575,7 @@ func shell(s gliderssh.Session, version, gitSha, gitTag string) error {
 						&cli.BoolFlag{Name: FlagLatestName, Aliases: []string{"l"}, Usage: "Show the latest session"},
 						&cli.BoolFlag{Name: "active", Aliases: []string{"a"}, Usage: "Show only active session"},
 						&cli.BoolFlag{Name: FlagQuietName, Aliases: []string{"q"}, Usage: FlagQuietUsage},
-						&cli.IntFlag{Name: FlagLimitName, Aliases: []string{"n"}, Value: 100, Usage: FlagLimitUsage},
+						&cli.IntFlag{Name: FlagLimitName, Aliases: []string{"n"}, Value: FlagLimitDefault, Usage: FlagLimitUsage},
 					},
 					Action: func(c context.Context, cmd *cli.Command) error {
 						if err := myself.CheckRoles([]string{UserAdminName}); err != nil {
