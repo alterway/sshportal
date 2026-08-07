@@ -248,7 +248,10 @@ func pipe(lreqs, rreqs <-chan *ssh.Request, lch, rch ssh.Channel, sessConfig ses
 
 			if rchEOF && rchClosed && !lchClosed {
 				if err := lch.Close(); err != nil {
-					log.Printf("failed to close session log channel: %v", err)
+					// https://github.com/golang/go/issues/38115
+					if err != io.EOF {
+						log.Printf("failed to close session log channel: %v", err)
+					}
 				}
 			}
 
