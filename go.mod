@@ -6,7 +6,7 @@ require (
 	github.com/gliderlabs/ssh v0.3.8
 	github.com/go-gormigrate/gormigrate/v2 v2.1.6
 	github.com/olekukonko/tablewriter v1.1.4
-	github.com/urfave/cli/v3 v3.10.1
+	github.com/urfave/cli/v3 v3.11.0
 	golang.org/x/crypto v0.55.0
 	golang.org/x/tools v0.49.0
 	gorm.io/driver/mysql v1.6.0
