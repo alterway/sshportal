@@ -4,13 +4,13 @@ require (
 	github.com/asaskevich/govalidator/v12 v12.0.0
 	github.com/creack/pty v1.1.24
 	github.com/gliderlabs/ssh v0.3.8
-	github.com/go-gormigrate/gormigrate/v2 v2.1.6
-	github.com/olekukonko/tablewriter v1.1.4
-	github.com/urfave/cli/v3 v3.11.0
+	github.com/go-gormigrate/gormigrate/v2 v2.1.7
+	github.com/olekukonko/tablewriter v1.1.5
+	github.com/urfave/cli/v3 v3.13.0
 	golang.org/x/crypto v0.57.0
 	golang.org/x/tools v0.50.0
 	gorm.io/driver/mysql v1.6.0
-	gorm.io/driver/postgres v1.6.2
+	gorm.io/driver/postgres v1.6.3
 	gorm.io/driver/sqlite v1.6.0
 	gorm.io/gorm v1.31.2
 )
