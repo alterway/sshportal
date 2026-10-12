@@ -18,9 +18,9 @@ import (
 	"github.com/alterway/sshportal/pkg/utils"
 
 	"github.com/asaskevich/govalidator/v12"
-	gliderssh "github.com/tailscale/gliderssh"
 	"github.com/olekukonko/tablewriter"
 	"github.com/olekukonko/tablewriter/tw"
+	gliderssh "github.com/tailscale/gliderssh"
 	"github.com/urfave/cli/v3"
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/crypto/ssh/terminal" // nolint:staticcheck

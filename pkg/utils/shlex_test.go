@@ -73,4 +73,3 @@ func TestSplitPosix(t *testing.T) {
 		})
 	}
 }
-

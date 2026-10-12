@@ -314,7 +314,7 @@ func PrivateKeyFromDB(db *gorm.DB, aesKey string) func(*gliderssh.Server) error 
 }
 
 func PublicKeyAuthHandler(db *gorm.DB, logsLocation, aclCheckCmd, aesKey, dbDriver, dbURL, bindAddr string, demo bool) gliderssh.PublicKeyHandler {
-	return func(ctx gliderssh.Context, key gliderssh.PublicKey) bool {
+	return func(ctx gliderssh.Context, key gliderssh.PublicKey) error {
 		actx := &authContext{
 			db:            db,
 			inputUsername: ctx.User(),
@@ -332,65 +332,64 @@ func PublicKeyAuthHandler(db *gorm.DB, logsLocation, aclCheckCmd, aesKey, dbDriv
 
 		// lookup user by key
 		db.Where("authorized_key = ?", string(ssh.MarshalAuthorizedKey(key))).First(&actx.userKey)
-		if actx.userKey.UserID > 0 {
-			db.Preload("Roles").Where("id = ?", actx.userKey.UserID).First(&actx.user)
-			if actx.userType() == userTypeInvite {
-				actx.err = fmt.Errorf("invites are only supported for new SSH keys; your ssh key is already associated with the user %q", actx.user.Email)
+		db.Preload("Roles").Where("id = ?", actx.userKey.UserID).First(&actx.user)
+
+		if actx.userType() == userTypeBastion {
+
+			// Cannot find host
+			host, err := dbmodels.HostByName(actx.db, actx.inputUsername)
+			if err != nil {
+				actx.err = err
+				return nil
 			}
-			if actx.userType() == userTypeBastion {
-				log.Printf("Checking if %s has access to %s\n", actx.user.Name, actx.inputUsername)
-				host, err := dbmodels.HostByName(actx.db, actx.inputUsername)
-				if err != nil {
-					actx.err = err
-					return true
-				}
-				_, err = bastionClientConfig(ctx, host)
-				if err != nil {
-					actx.err = err
-					return false
-				}
+
+			// Check permissions
+			if _, err := bastionClientConfig(ctx, host); err != nil {
+				actx.err = err
 			}
-			return true
+
+			return nil
 		}
 
-		// handle invite "links"
+		if actx.userKey.UserID > 0 && actx.userType() == userTypeShell {
+			return nil
+		}
+
 		if actx.userType() == userTypeInvite {
 			inputToken := strings.Split(actx.inputUsername, ":")[1]
-			if len(inputToken) > 0 {
-				db.Where("invite_token = ?", inputToken).First(&actx.user)
+
+			if len(inputToken) == 0 {
+				actx.err = fmt.Errorf("your token is empty")
+				return nil
 			}
-			if actx.user.ID > 0 {
-				var existingKeysCount int64
-				if err := db.Model(&dbmodels.UserKey{}).Where("user_id = ?", actx.user.ID).Count(&existingKeysCount).Error; err != nil {
-					actx.err = err
-					return true
-				}
-				if existingKeysCount > 0 {
-					actx.err = fmt.Errorf("the user %q already has a SSH key. You can't use this invitation token", actx.user.Email)
-					return true
-				}
-				actx.userKey = dbmodels.UserKey{
-					UserID:        actx.user.ID,
-					Key:           key.Marshal(),
-					Comment:       "created by sshportal",
-					AuthorizedKey: string(ssh.MarshalAuthorizedKey(key)),
-				}
-				db.Create(&actx.userKey)
 
-				// token is only usable once
-				db.Model(&actx.user).Update("invite_token", "")
-
-				actx.message = fmt.Sprintf("Welcome %s!\n\nYour key is now associated with the user %q.\n", actx.user.Name, actx.user.Email)
-			} else {
-				actx.user = dbmodels.User{Name: "Anonymous"}
+			if err := db.Where("invite_token = ?", inputToken).First(&actx.user).Error; err != nil {
 				actx.err = fmt.Errorf("your token is invalid or expired")
+				return nil
 			}
-			return true
+
+			actx.userKey = dbmodels.UserKey{
+				UserID:        actx.user.ID,
+				Key:           key.Marshal(),
+				Comment:       "created by sshportal",
+				AuthorizedKey: string(ssh.MarshalAuthorizedKey(key)),
+			}
+			db.Create(&actx.userKey)
+
+			// Clear the token as it is only usable once
+			db.Model(&actx.user).Update("invite_token", "")
+
+			actx.message = fmt.Sprintf(
+				"Welcome %s!\n\nYour key is now associated with the user %q.\n",
+				actx.user.Name,
+				actx.user.Email,
+			)
+			return nil
 		}
 
 		// fallback
-		actx.err = fmt.Errorf("unknown ssh key")
+		actx.err = fmt.Errorf("unknown ssh key or invalid invite token")
 		actx.user = dbmodels.User{Name: "Anonymous"}
-		return false
+		return nil
 	}
 }
