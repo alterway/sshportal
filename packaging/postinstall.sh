@@ -9,6 +9,10 @@ if [ -f /tmp/sshportal_mariadb ] &&
 	readonly SOCKET
 
 tee /etc/systemd/system/sshportal.service.d/custom.conf >/dev/null 2>&1 << END
+[Unit]
+After=mariadb.service
+Wants=mariadb.service
+
 [Service]
 StateDirectory=
 Environment=SSHPORTAL_DB_DRIVER=mysql
