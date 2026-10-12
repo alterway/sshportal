@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/alterway/sshportal/pkg/dbmodels"
-	gliderssh "github.com/gliderlabs/ssh"
+	gliderssh "github.com/tailscale/gliderssh"
 	"golang.org/x/crypto/ssh"
 	"gorm.io/gorm"
 )

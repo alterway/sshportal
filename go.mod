@@ -3,12 +3,12 @@ module github.com/alterway/sshportal
 require (
 	github.com/asaskevich/govalidator/v12 v12.0.0
 	github.com/creack/pty v1.1.24
-	github.com/gliderlabs/ssh v0.3.8
 	github.com/go-gormigrate/gormigrate/v2 v2.1.7
 	github.com/olekukonko/tablewriter v1.1.5
+	github.com/tailscale/gliderssh v0.3.8
 	github.com/urfave/cli/v3 v3.13.0
-	golang.org/x/crypto v0.57.0
-	golang.org/x/tools v0.50.0
+	golang.org/x/crypto v0.58.0
+	golang.org/x/tools v0.51.0
 	gorm.io/driver/mysql v1.6.0
 	gorm.io/driver/postgres v1.6.3
 	gorm.io/driver/sqlite v1.6.0
@@ -17,7 +17,6 @@ require (
 
 require (
 	filippo.io/edwards25519 v1.1.1 // indirect
-	github.com/anmitsu/go-shlex v0.0.0-20200514113438-38f4b401e2be // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/clipperhouse/displaywidth v0.10.0 // indirect
 	github.com/clipperhouse/uax29/v2 v2.6.0 // indirect
@@ -36,12 +35,14 @@ require (
 	github.com/olekukonko/cat v0.0.0-20250911104152-50322a0618f6 // indirect
 	github.com/olekukonko/errors v1.2.0 // indirect
 	github.com/olekukonko/ll v0.1.6 // indirect
-	golang.org/x/sync v0.23.0 // indirect
-	golang.org/x/sys v0.48.0 // indirect
-	golang.org/x/term v0.46.0 // indirect
-	golang.org/x/text v0.42.0 // indirect
+	golang.org/x/sync v0.24.0 // indirect
+	golang.org/x/sys v0.49.0 // indirect
+	golang.org/x/term v0.47.0 // indirect
+	golang.org/x/text v0.43.0 // indirect
 )
 
 go 1.26.0
 
 replace gorm.io/driver/sqlite => github.com/libvoid/sqlite v0.0.0-20260819154759-f0884b23e829
+
+replace github.com/tailscale/gliderssh => github.com/alterway/gliderssh v0.4.1

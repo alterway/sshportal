@@ -13,7 +13,7 @@ import (
 	"unsafe"
 
 	"github.com/creack/pty"
-	gliderssh "github.com/gliderlabs/ssh"
+	gliderssh "github.com/tailscale/gliderssh"
 	"github.com/urfave/cli/v3"
 )
 

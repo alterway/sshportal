@@ -11,7 +11,7 @@ import (
 	"github.com/alterway/sshportal/pkg/crypto"
 	"github.com/alterway/sshportal/pkg/dbmodels"
 
-	gliderssh "github.com/gliderlabs/ssh"
+	gliderssh "github.com/tailscale/gliderssh"
 	ssh "golang.org/x/crypto/ssh"
 	"gorm.io/gorm"
 )
