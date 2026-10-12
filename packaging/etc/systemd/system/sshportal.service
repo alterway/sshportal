@@ -1,9 +1,13 @@
 [Unit]
 After=ssh.service
 Wants=sshportal_clean_session_logs.timer
+StartLimitIntervalSec=300
+StartLimitBurst=60
 
 [Service]
 Type=exec
+Restart=on-failure
+RestartSec=5s
 DynamicUser=yes
 User=sshportal
 StandardOutput=append:/var/log/sshportal/audit/audit.log
