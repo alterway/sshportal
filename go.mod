@@ -6,9 +6,9 @@ require (
 	github.com/go-gormigrate/gormigrate/v2 v2.1.7
 	github.com/olekukonko/tablewriter v1.1.5
 	github.com/tailscale/gliderssh v0.3.8
-	github.com/urfave/cli/v3 v3.13.0
+	github.com/urfave/cli/v3 v3.14.0
 	golang.org/x/crypto v0.58.0
-	golang.org/x/tools v0.51.0
+	golang.org/x/tools v0.52.0
 	gorm.io/driver/mysql v1.6.0
 	gorm.io/driver/postgres v1.6.3
 	gorm.io/driver/sqlite v1.6.0
