@@ -1899,7 +1899,7 @@ func shell(s gliderssh.Session, version, gitSha, gitTag string) error {
 						}
 
 						limit := cmd.Int(FlagLimitName)
-						query := db.Order("id desc").Preload("Roles").Preload("Keys")
+						query := db.Order("id desc").Preload("Groups").Preload("Roles").Preload("Keys")
 
 						var total int64
 						if err := db.Model(&dbmodels.User{}).Count(&total).Error; err != nil {
